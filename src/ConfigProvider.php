@@ -10,9 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Listener\RegisterSubsciberListener;
-use FriendsOfHyperf\Trigger\Listener\RegisterTriggerListener;
-
 class ConfigProvider
 {
     public function __invoke(): array
@@ -35,8 +32,8 @@ class ConfigProvider
             ],
             'commands' => [],
             'listeners' => [
-                RegisterTriggerListener::class,
-                RegisterSubsciberListener::class,
+                Listener\RegisterTriggerListener::class,
+                Listener\RegisterSubsciberListener::class,
             ],
             'publish' => [
                 [

@@ -31,13 +31,13 @@ use MySQLReplication\Event\DTO\EventDTO;
 
 /**
  * single
- * @Trigger(table="table" on="write", replication="default")
+ * @Trigger(table="table", on="write", replication="default")
  * or multi events by array
- * @Trigger(table="table" on={"write", "update", "delete"}, replication="default")
+ * @Trigger(table="table", on={"write", "update", "delete"}, replication="default")
  * or multi events by string
- * @Trigger(table="table" on="write,update,delete", replication="default")
+ * @Trigger(table="table", on="write,update,delete", replication="default")
  * or all events
- * @Trigger(table="table" on="*", replication="default")
+ * @Trigger(table="table", on="*", replication="default")
  */
 class SomeTableListener extends AbstractTrigger
 {

@@ -1,0 +1,38 @@
+{
+    "name": "friendsofhyperf/trigger",
+    "description": "MySQL Trigger for hyperf.",
+    "type": "library",
+    "require": {
+        "hyperf/event": "^2.0",
+        "hyperf/process": "^2.0",
+        "hyperf/command": "^2.0",
+        "krowinski/php-mysql-replication": "^6.2",
+        "hyperf/utils": "^2.0",
+        "hyperf/di": "^2.0"
+    },
+    "require-dev": {
+        "hyperf/framework": "^2.0",
+        "friendsofphp/php-cs-fixer": "^2.04",
+        "swoole/ide-helper": "dev-master",
+        "phpstan/phpstan": "^0.12"
+    },
+    "autoload": {
+        "psr-4": {
+            "Huangdijia\\Trigger\\": "src"
+        }
+    },
+    "extra": {
+        "hyperf": {
+            "config": "FriendsOfHyperf\\Trigger\\ConfigProvider"
+        }
+    },
+    "license": "MIT",
+    "authors": [{
+        "name": "huangdijia",
+        "email": "huangdijia@gmail.com"
+    }],
+    "scripts": {
+        "cs-fix": "php-cs-fixer fix $1",
+        "analyse": "phpstan analyse --memory-limit 300M -l 0 -c phpstan.neon ./src"
+    }
+}

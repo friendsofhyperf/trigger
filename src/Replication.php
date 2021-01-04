@@ -39,11 +39,11 @@ class Replication
             ->withDatabasesOnly((array) $config['databases_only'] ?? [])
             ->withtablesOnly((array) $config['tables_only'] ?? []);
 
-        if ($config['binlog_filename']) {
+        if (isset($config['binlog_filename'])) {
             $configBuilder->withBinLogFileName($config['binlog_filename']);
         }
 
-        if ($config['binlog_position']) {
+        if (isset($config['binlog_position'])) {
             $configBuilder->withBinLogPosition((int) $config['binlog_position']);
         }
 

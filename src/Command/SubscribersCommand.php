@@ -11,6 +11,8 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Command;
 
 use FriendsOfHyperf\Trigger\Annotation\Subscriber;
+use FriendsOfHyperf\Trigger\Subscriber\HeartbeatSubscriber;
+use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Di\Annotation\AnnotationCollector;
@@ -20,14 +22,14 @@ use Symfony\Component\Console\Input\InputOption;
 /**
  * @Command
  */
-class SubscibersCommand extends HyperfCommand
+class SubscribersCommand extends HyperfCommand
 {
     /**
      * @var ContainerInterface
      */
     protected $container;
 
-    protected $name = 'trigger:subscibers';
+    protected $name = 'trigger:subscribers';
 
     public function __construct(ContainerInterface $container)
     {
@@ -54,7 +56,11 @@ class SubscibersCommand extends HyperfCommand
             })
             ->transform(function ($property, $class) {
                 return [$property->replication, $class, $property->priority];
-            });
+            })
+            ->merge([
+                ['[default]', TriggerSubscriber::class, 1],
+                ['[default]', HeartbeatSubscriber::class, 1],
+            ]);
 
         $this->info('Subscibers:');
         $this->table(['Replication', 'Subsciber', 'Priority'], $rows);

@@ -56,7 +56,7 @@ class RegisterSubsciberListener implements ListenerInterface
                 $replication = $property->replication ?? 'default';
                 $factory->get($replication)->register($class);
 
-                $logger->info(sprintf('[trigger.%s] %s registered by %s listener.', $class, $replication, __CLASS__));
+                $logger->info(sprintf('[trigger.%s] %s registered by %s listener.', $replication, $class, __CLASS__));
             }
         }
     }

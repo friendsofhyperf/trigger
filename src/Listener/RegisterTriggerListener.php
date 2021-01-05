@@ -62,7 +62,7 @@ class RegisterTriggerListener implements ListenerInterface
 
                 $factory->get($property->replication ?: 'default')->register($property->table, $property->events, $class);
 
-                $logger->info(sprintf('[trigger.%s] %s [events:%s] registered by %s listener.', $class, $property->replication, implode(',', $property->events), __CLASS__));
+                $logger->info(sprintf('[trigger.%s] %s [events:%s] registered by %s listener.', $property->replication, $class, implode(',', $property->events), __CLASS__));
             }
         }
     }

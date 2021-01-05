@@ -66,7 +66,6 @@ class TriggerSubscriber extends AbstractSubscriber
         $table = $event->getTableMap()->getTable();
         $eventType = $event->getType();
         $triggers = $this->triggerManager->get($table, $eventType);
-        // $this->logger->info($eventType . ':' . json_encode($triggers, JSON_PRETTY_PRINT));
 
         foreach ($triggers as $class) {
             /** @var TriggerInterface $trigger */
@@ -79,6 +78,7 @@ class TriggerSubscriber extends AbstractSubscriber
                         $callback = function () use ($trigger, $row) {
                             $trigger->onUpdate($row['before'], $row['after']);
                         };
+
                         if ($this->concurrent) {
                             $this->concurrent->create($callback);
                         } else {
@@ -92,6 +92,7 @@ class TriggerSubscriber extends AbstractSubscriber
                         $callback = function () use ($trigger, $old) {
                             $trigger->onDelete($old);
                         };
+
                         if ($this->concurrent) {
                             $this->concurrent->create($callback);
                         } else {
@@ -105,6 +106,7 @@ class TriggerSubscriber extends AbstractSubscriber
                         $callback = function () use ($trigger, $new) {
                             $trigger->onWrite($new);
                         };
+
                         if ($this->concurrent) {
                             $this->concurrent->create($callback);
                         } else {
@@ -113,8 +115,6 @@ class TriggerSubscriber extends AbstractSubscriber
                     }
                     break;
             }
-
-            // $this->logger && $this->logger->info(sprintf('[trigger] %s[%s] triggered.', $class, $eventType));
         }
     }
 }

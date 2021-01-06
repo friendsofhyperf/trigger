@@ -1,6 +1,6 @@
 # hyperf-trigger
 
-[![Latest Stable Version](https://friendsofversion/png)](https://packagist.org/packages/friendsofhyperf/trigger)
+[![Latest Stable Version](https://poser.pugx.org/friendsofhyperf/trigger/version.png)](https://packagist.org/packages/friendsofhyperf/trigger)
 [![Total Downloads](https://poser.pugx.org/friendsofhyperf/trigger/d/total.png)](https://packagist.org/packages/friendsofhyperf/trigger)
 [![GitHub license](https://img.shields.io/github/license/friendsofhyperf/trigger)](https://github.com/friendsofhyperf/trigger)
 

@@ -24,9 +24,6 @@ class HeartbeatSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
-        parent::__construct($container, $replication);
-
-        $this->replication = $replication;
         $this->positionFactory = $container->get(PositionFactory::class);
     }
 

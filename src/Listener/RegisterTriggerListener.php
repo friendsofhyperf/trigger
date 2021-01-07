@@ -41,7 +41,9 @@ class RegisterTriggerListener implements ListenerInterface
         if (ApplicationContext::hasContainer()) {
             /** @var TriggerManagerFactory $factory */
             $factory = ApplicationContext::getContainer()->get(TriggerManagerFactory::class);
+            /** @var array $triggers */
             $triggers = AnnotationCollector::getClassesByAnnotation(Trigger::class);
+            /** @var StdoutLoggerInterface $logger */
             $logger = ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
             $queue = new SplPriorityQueue();
 
@@ -49,9 +51,7 @@ class RegisterTriggerListener implements ListenerInterface
                 $queue->insert([$class, $property], $property->priority ?? 0);
             }
 
-            foreach ($queue as $item) {
-                [$class, $property] = $item;
-
+            foreach ($queue as [$class, $property]) {
                 if (! in_array(TriggerInterface::class, class_implements($class))) {
                     continue;
                 }

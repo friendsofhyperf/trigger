@@ -36,12 +36,13 @@ class TriggerSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
-        parent::__construct($container, $replication);
-
         /** @var TriggerManagerFactory $factory */
         $factory = $container->get(TriggerManagerFactory::class);
         $this->triggerManager = $factory->get($this->replication);
-        $concurrentLimit = $this->config['concurrent']['limit'] ?? null;
+
+        /** @var array $config */
+        $config = $container->get(ConfigInterface::class)->get('trigger.' . $replication) ?? [];
+        $concurrentLimit = $config['concurrent']['limit'] ?? null;
 
         if ($concurrentLimit && is_numeric($concurrentLimit)) {
             $this->concurrent = new Concurrent((int) $concurrentLimit);

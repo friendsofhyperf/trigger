@@ -69,30 +69,10 @@ class Replication
 
     /**
      * @throws RuntimeException
-     */
-    protected function getInternalIp(): string
-    {
-        $ips = swoole_get_local_ip();
-
-        if (is_array($ips) && ! empty($ips)) {
-            return current($ips);
-        }
-
-        /** @var mixed|string $ip */
-        $ip = gethostbyname(gethostname());
-        if (is_string($ip)) {
-            return $ip;
-        }
-
-        throw new RuntimeException('Can not get the internal IP.');
-    }
-
-    /**
-     * @throws RuntimeException
      * @return int
      */
     protected function getSlaveId()
     {
-        return (int) ip2long($this->getInternalIp());
+        return (int) ip2long(Util::getInternalIp());
     }
 }

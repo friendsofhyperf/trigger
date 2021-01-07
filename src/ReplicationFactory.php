@@ -18,11 +18,6 @@ use RuntimeException;
 class ReplicationFactory implements FactoryInterface
 {
     /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    /**
      * @var ConfigInterface
      */
     protected $config;
@@ -39,7 +34,6 @@ class ReplicationFactory implements FactoryInterface
 
     public function __construct(ContainerInterface $container)
     {
-        $this->container = $container;
         $this->config = $container->get(ConfigInterface::class);
         $this->positionFactory = $container->get(PositionFactory::class);
     }

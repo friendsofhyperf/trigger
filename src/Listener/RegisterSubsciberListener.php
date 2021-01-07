@@ -43,7 +43,9 @@ class RegisterSubsciberListener implements ListenerInterface
             $container = ApplicationContext::getContainer();
             /** @var SubscriberManagerFactory $factory */
             $factory = $container->get(SubscriberManagerFactory::class);
+            /** @var array $subscribers */
             $subscribers = AnnotationCollector::getClassesByAnnotation(Subscriber::class);
+            /** @var StdoutLoggerInterface $logger */
             $logger = ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
             $queue = new SplPriorityQueue();
 
@@ -51,8 +53,7 @@ class RegisterSubsciberListener implements ListenerInterface
                 $queue->insert([$class, $property], $property->priority ?? 0);
             }
 
-            foreach ($queue as $item) {
-                [$class, $property] = $item;
+            foreach ($queue as [$class, $property]) {
                 $replication = $property->replication ?? 'default';
                 $factory->get($replication)->register($class);
 

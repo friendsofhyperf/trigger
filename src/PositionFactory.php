@@ -11,7 +11,6 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Constact\FactoryInterface;
-use Psr\Container\ContainerInterface;
 
 class PositionFactory implements FactoryInterface
 {
@@ -19,16 +18,6 @@ class PositionFactory implements FactoryInterface
      * @var array
      */
     protected $positions = [];
-
-    /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->container = $container;
-    }
 
     /**
      * @return Position

@@ -32,8 +32,8 @@ class ConfigProvider
             ],
             'commands' => [],
             'listeners' => [
-                Listener\RegisterTriggerListener::class,
-                Listener\RegisterSubsciberListener::class,
+                Listener\RegisterTriggerListener::class => PHP_INT_MIN,
+                Listener\RegisterSubsciberListener::class => PHP_INT_MIN,
             ],
             'publish' => [
                 [

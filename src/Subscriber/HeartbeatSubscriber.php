@@ -22,9 +22,15 @@ class HeartbeatSubscriber extends AbstractSubscriber
      */
     protected $positionFactory;
 
+    /**
+     * @var string
+     */
+    protected $replication;
+
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
         $this->positionFactory = $container->get(PositionFactory::class);
+        $this->replication = $replication;
     }
 
     public static function getSubscribedEvents(): array

@@ -34,8 +34,15 @@ class TriggerSubscriber extends AbstractSubscriber
      */
     protected $concurrent;
 
+    /**
+     * @var string
+     */
+    protected $replication;
+
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
+        $this->replication = $replication;
+
         /** @var TriggerManagerFactory $factory */
         $factory = $container->get(TriggerManagerFactory::class);
         $this->triggerManager = $factory->get($this->replication);

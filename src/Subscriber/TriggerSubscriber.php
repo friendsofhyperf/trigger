@@ -13,6 +13,7 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\Constact\TriggerInterface;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use FriendsOfHyperf\Trigger\TriggerManagerFactory;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\DeleteRowsDTO;

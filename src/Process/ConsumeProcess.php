@@ -71,7 +71,7 @@ class ConsumeProcess extends AbstractProcess
 
         foreach ($subscribers as $class) {
             $replication->registerSubscriber(make($class, ['replication' => $this->replication]));
-            $this->logger->debug(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, $class, __CLASS__));
+            $this->logger->debug(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, $class, get_class($this)));
         }
 
         $replication->run();

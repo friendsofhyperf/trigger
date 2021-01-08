@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
+use FriendsOfHyperf\Trigger\Position;
 use FriendsOfHyperf\Trigger\PositionFactory;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
@@ -20,9 +21,9 @@ use Psr\Container\ContainerInterface;
 class HeartbeatSubscriber extends AbstractSubscriber
 {
     /**
-     * @var PositionFactory
+     * @var Position
      */
-    protected $positionFactory;
+    protected $position;
 
     /**
      * @var string
@@ -36,15 +37,16 @@ class HeartbeatSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
-        $this->positionFactory = $container->get(PositionFactory::class);
-        $this->replication = $replication;
+        /** @var PositionFactory $factory */
+        $factory = $container->get(PositionFactory::class);
+        $this->position = $factory->get($replication);
 
-        /** @var array $config */
-        $config = $container->get(ConfigInterface::class)->get('trigger.' . $replication) ?? [];
-        $concurrentLimit = $config['concurrent']['limit'] ?? null;
+        /** @var ConfigInterface $config */
+        $config = $container->get(ConfigInterface::class);
+        $limit = $config->get('trigger.concurrent.limit');
 
-        if ($concurrentLimit && is_numeric($concurrentLimit)) {
-            $this->concurrent = new Concurrent((int) $concurrentLimit);
+        if ($limit && is_numeric($limit)) {
+            $this->concurrent = new Concurrent((int) $limit);
         }
     }
 
@@ -58,7 +60,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
     public function onHeartbeat(HeartbeatDTO $event): void
     {
         $callback = function () use ($event) {
-            $this->positionFactory->get($this->replication)->set($event->getEventInfo()->getBinLogCurrent());
+            $this->position->set($event->getEventInfo()->getBinLogCurrent());
         };
 
         if ($this->concurrent) {

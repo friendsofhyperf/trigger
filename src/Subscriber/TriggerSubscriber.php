@@ -66,64 +66,24 @@ class TriggerSubscriber extends AbstractSubscriber
         ];
     }
 
-    protected function allEvents(EventDTO $event): void
+    public function onWrite(WriteRowsDTO $event): void
     {
         $callback = function () use ($event) {
-            if (! ($event instanceof RowsDTO)) {
-                return;
-            }
-
-            $table = $event->getTableMap()->getTable();
-            $eventType = $event->getType();
-            $triggers = $this->triggerManager->get($table, $eventType);
+            $triggers = $this->getEventTriggers($event);
 
             foreach ($triggers as $class) {
-                /** @var TriggerInterface $trigger */
-                $trigger = make($class);
+                foreach ($event->getValues() as $new) {
+                    $callback = function () use ($class, $new) {
+                        /** @var TriggerInterface $trigger */
+                        $trigger = make($class);
+                        $trigger->onWrite($new);
+                    };
 
-                switch ($eventType) {
-                    case ConstEventsNames::UPDATE:
-                        /** @var UpdateRowsDTO $event */
-                        foreach ($event->getValues() as $row) {
-                            $callback = function () use ($trigger, $row) {
-                                $trigger->onUpdate($row['before'], $row['after']);
-                            };
-
-                            if ($this->concurrent) {
-                                $this->concurrent->create($callback);
-                            } else {
-                                parallel([$callback]);
-                            }
-                        }
-                        break;
-                    case ConstEventsNames::DELETE:
-                        /** @var DeleteRowsDTO $event */
-                        foreach ($event->getValues() as $old) {
-                            $callback = function () use ($trigger, $old) {
-                                $trigger->onDelete($old);
-                            };
-
-                            if ($this->concurrent) {
-                                $this->concurrent->create($callback);
-                            } else {
-                                parallel([$callback]);
-                            }
-                        }
-                        break;
-                    case ConstEventsNames::WRITE:
-                        /** @var WriteRowsDTO $event */
-                        foreach ($event->getValues() as $new) {
-                            $callback = function () use ($trigger, $new) {
-                                $trigger->onWrite($new);
-                            };
-
-                            if ($this->concurrent) {
-                                $this->concurrent->create($callback);
-                            } else {
-                                parallel([$callback]);
-                            }
-                        }
-                        break;
+                    if ($this->concurrent) {
+                        $this->concurrent->create($callback);
+                    } else {
+                        parallel([$callback]);
+                    }
                 }
             }
         };
@@ -134,4 +94,142 @@ class TriggerSubscriber extends AbstractSubscriber
             parallel([$callback]);
         }
     }
+
+    public function onUpdate(UpdateRowsDTO $event): void
+    {
+        $callback = function () use ($event) {
+            $triggers = $this->getEventTriggers($event);
+
+            foreach ($triggers as $class) {
+                foreach ($event->getValues() as $row) {
+                    $callback = function () use ($class, $row) {
+                        /** @var TriggerInterface $trigger */
+                        $trigger = make($class);
+                        $trigger->onUpdate($row['before'], $row['after']);
+                    };
+
+                    if ($this->concurrent) {
+                        $this->concurrent->create($callback);
+                    } else {
+                        parallel([$callback]);
+                    }
+                }
+            }
+        };
+
+        if ($this->concurrent) {
+            $this->concurrent->create($callback);
+        } else {
+            parallel([$callback]);
+        }
+    }
+
+    public function onDelete(DeleteRowsDTO $event): void
+    {
+        $callback = function () use ($event) {
+            $triggers = $this->getEventTriggers($event);
+
+            foreach ($triggers as $class) {
+                foreach ($event->getValues() as $old) {
+                    $callback = function () use ($class, $old) {
+                        /** @var TriggerInterface $trigger */
+                        $trigger = make($class);
+                        $trigger->onDelete($old);
+                    };
+
+                    if ($this->concurrent) {
+                        $this->concurrent->create($callback);
+                    } else {
+                        parallel([$callback]);
+                    }
+                }
+            }
+        };
+
+        if ($this->concurrent) {
+            $this->concurrent->create($callback);
+        } else {
+            parallel([$callback]);
+        }
+    }
+
+    /**
+     * @return string[]
+     */
+    protected function getEventTriggers(RowsDTO $event)
+    {
+        $table = $event->getTableMap()->getTable();
+        $eventType = $event->getType();
+
+        return $this->triggerManager->get($table, $eventType);
+    }
+
+    // protected function allEvents(EventDTO $event): void
+    // {
+    //     $callback = function () use ($event) {
+    //         if (! ($event instanceof RowsDTO)) {
+    //             return;
+    //         }
+
+    //         $table = $event->getTableMap()->getTable();
+    //         $eventType = $event->getType();
+    //         $triggers = $this->triggerManager->get($table, $eventType);
+
+    //         foreach ($triggers as $class) {
+    //             /** @var TriggerInterface $trigger */
+    //             $trigger = make($class);
+
+    //             switch ($eventType) {
+    //                 case ConstEventsNames::UPDATE:
+    //                     /** @var UpdateRowsDTO $event */
+    //                     foreach ($event->getValues() as $row) {
+    //                         $callback = function () use ($trigger, $row) {
+    //                             $trigger->onUpdate($row['before'], $row['after']);
+    //                         };
+
+    //                         if ($this->concurrent) {
+    //                             $this->concurrent->create($callback);
+    //                         } else {
+    //                             parallel([$callback]);
+    //                         }
+    //                     }
+    //                     break;
+    //                 case ConstEventsNames::DELETE:
+    //                     /** @var DeleteRowsDTO $event */
+    //                     foreach ($event->getValues() as $old) {
+    //                         $callback = function () use ($trigger, $old) {
+    //                             $trigger->onDelete($old);
+    //                         };
+
+    //                         if ($this->concurrent) {
+    //                             $this->concurrent->create($callback);
+    //                         } else {
+    //                             parallel([$callback]);
+    //                         }
+    //                     }
+    //                     break;
+    //                 case ConstEventsNames::WRITE:
+    //                     /** @var WriteRowsDTO $event */
+    //                     foreach ($event->getValues() as $new) {
+    //                         $callback = function () use ($trigger, $new) {
+    //                             $trigger->onWrite($new);
+    //                         };
+
+    //                         if ($this->concurrent) {
+    //                             $this->concurrent->create($callback);
+    //                         } else {
+    //                             parallel([$callback]);
+    //                         }
+    //                     }
+    //                     break;
+    //             }
+    //         }
+    //     };
+
+    //     if ($this->concurrent) {
+    //         $this->concurrent->create($callback);
+    //     } else {
+    //         parallel([$callback]);
+    //     }
+    // }
 }

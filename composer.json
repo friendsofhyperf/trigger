@@ -29,6 +29,9 @@
     "config": {
         "sort-packages": true
     },
+    "suggest": {
+        "krowinski/php-mysql-replication": "update to 7.x"
+    },
     "license": "MIT",
     "authors": [{
         "name": "huangdijia",

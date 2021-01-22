@@ -6,9 +6,9 @@
         "hyperf/event": "^2.0",
         "hyperf/process": "^2.0",
         "hyperf/command": "^2.0",
-        "krowinski/php-mysql-replication": "^6.2",
         "hyperf/utils": "^2.0",
-        "hyperf/di": "^2.0"
+        "hyperf/di": "^2.0",
+        "gemini/php-mysql-replication": "^7.0"
     },
     "require-dev": {
         "hyperf/framework": "^2.0",
@@ -25,6 +25,9 @@
         "hyperf": {
             "config": "FriendsOfHyperf\\Trigger\\ConfigProvider"
         }
+    },
+    "config": {
+        "sort-packages": true
     },
     "license": "MIT",
     "authors": [{

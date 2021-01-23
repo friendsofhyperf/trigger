@@ -10,12 +10,11 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Constact\FactoryInterface;
 use Hyperf\Contract\ConfigInterface;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 
-class ReplicationFactory implements FactoryInterface
+class ReplicationFactory
 {
     /**
      * @var ConfigInterface

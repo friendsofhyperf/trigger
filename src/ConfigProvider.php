@@ -17,12 +17,7 @@ class ConfigProvider
         defined('BASE_PATH') or define('BASE_PATH', '');
 
         return [
-            'dependencies' => [
-                PositionFactory::class => PositionFactory::class,
-                ReplicationFactory::class => ReplicationFactory::class,
-                SubscriberManagerFactory::class => SubscriberManagerFactory::class,
-                TriggerManagerFactory::class => TriggerManagerFactory::class,
-            ],
+            'dependencies' => [],
             'annotations' => [
                 'scan' => [
                     'paths' => [
@@ -31,14 +26,11 @@ class ConfigProvider
                 ],
             ],
             'commands' => [],
-            'listeners' => [
-                Listener\RegisterTriggerListener::class => PHP_INT_MIN,
-                Listener\RegisterSubsciberListener::class => PHP_INT_MIN,
-            ],
+            'listeners' => [],
             'publish' => [
                 [
                     'id' => 'config',
-                    'description' => 'config file.',
+                    'description' => 'config file of trigger.',
                     'source' => __DIR__ . '/../publish/trigger.php',
                     'destination' => BASE_PATH . '/config/autoload/trigger.php',
                 ],

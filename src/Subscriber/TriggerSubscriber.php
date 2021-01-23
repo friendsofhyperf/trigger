@@ -11,23 +11,20 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
 use Closure;
-use FriendsOfHyperf\Trigger\Constact\TriggerInterface;
-use FriendsOfHyperf\Trigger\TriggerManager;
-use FriendsOfHyperf\Trigger\TriggerManagerFactory;
+use FriendsOfHyperf\Trigger\TriggerDispatcher;
+use FriendsOfHyperf\Trigger\TriggerDispatcherFactory;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
-use MySQLReplication\Event\DTO\DeleteRowsDTO;
-use MySQLReplication\Event\DTO\UpdateRowsDTO;
-use MySQLReplication\Event\DTO\WriteRowsDTO;
+use MySQLReplication\Event\DTO\EventDTO;
 use Psr\Container\ContainerInterface;
 
 class TriggerSubscriber extends AbstractSubscriber
 {
     /**
-     * @var TriggerManager
+     * @var TriggerDispatcher
      */
-    protected $triggerManager;
+    protected $triggerDispatcher;
 
     /**
      * @var null|Concurrent
@@ -36,9 +33,9 @@ class TriggerSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
-        /** @var TriggerManagerFactory $factory */
-        $factory = $container->get(TriggerManagerFactory::class);
-        $this->triggerManager = $factory->get($replication);
+        /** @var TriggerDispatcherFactory $triggerDispatcherFactory */
+        $triggerDispatcherFactory = $container->get(TriggerDispatcherFactory::class);
+        $this->triggerDispatcher = $triggerDispatcherFactory->get($replication);
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
@@ -58,54 +55,10 @@ class TriggerSubscriber extends AbstractSubscriber
         ];
     }
 
-    public function onWrite(WriteRowsDTO $event): void
+    protected function allEvents(EventDTO $event): void
     {
         $this->co(function () use ($event) {
-            $triggers = $this->triggerManager->get($event->getTableMap()->getTable(), $event->getType());
-
-            foreach ($triggers as $class) {
-                foreach ($event->getValues() as $new) {
-                    $this->co(function () use ($class, $new) {
-                        /** @var TriggerInterface $trigger */
-                        $trigger = make($class);
-                        $trigger->onWrite($new);
-                    });
-                }
-            }
-        });
-    }
-
-    public function onUpdate(UpdateRowsDTO $event): void
-    {
-        $this->co(function () use ($event) {
-            $triggers = $this->triggerManager->get($event->getTableMap()->getTable(), $event->getType());
-
-            foreach ($triggers as $class) {
-                foreach ($event->getValues() as $row) {
-                    $this->co(function () use ($class, $row) {
-                        /** @var TriggerInterface $trigger */
-                        $trigger = make($class);
-                        $trigger->onUpdate($row['before'], $row['after']);
-                    });
-                }
-            }
-        });
-    }
-
-    public function onDelete(DeleteRowsDTO $event): void
-    {
-        $this->co(function () use ($event) {
-            $triggers = $this->triggerManager->get($event->getTableMap()->getTable(), $event->getType());
-
-            foreach ($triggers as $class) {
-                foreach ($event->getValues() as $old) {
-                    $this->co(function () use ($class, $old) {
-                        /** @var TriggerInterface $trigger */
-                        $trigger = make($class);
-                        $trigger->onDelete($old);
-                    });
-                }
-            }
+            $this->triggerDispatcher->dispatch($event);
         });
     }
 

@@ -10,9 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Constact\FactoryInterface;
-
-class PositionFactory implements FactoryInterface
+class PositionFactory
 {
     /**
      * @var array

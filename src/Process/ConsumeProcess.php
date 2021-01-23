@@ -13,7 +13,7 @@ namespace FriendsOfHyperf\Trigger\Process;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
 use FriendsOfHyperf\Trigger\Subscriber\HeartbeatSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
-use FriendsOfHyperf\Trigger\SubscriberManagerFactory;
+use FriendsOfHyperf\Trigger\SubscriberProviderFactory;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
@@ -37,9 +37,9 @@ class ConsumeProcess extends AbstractProcess
     protected $replicationFactory;
 
     /**
-     * @var SubscriberManagerFactory
+     * @var SubscriberProviderFactory
      */
-    protected $subscriberManagerFactory;
+    protected $subscriberProviderFactory;
 
     /**
      * @var StdoutLoggerInterface
@@ -50,7 +50,7 @@ class ConsumeProcess extends AbstractProcess
     {
         parent::__construct($container);
 
-        $this->subscriberManagerFactory = $container->get(SubscriberManagerFactory::class);
+        $this->subscriberProviderFactory = $container->get(SubscriberProviderFactory::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
 
@@ -63,15 +63,15 @@ class ConsumeProcess extends AbstractProcess
     public function handle(): void
     {
         $replication = $this->replicationFactory->get($this->replication);
-        $subscribers = $this->subscriberManagerFactory->get($this->replication)->get();
-        $subscribers = array_merge($subscribers, [
-            TriggerSubscriber::class,
-            HeartbeatSubscriber::class,
-        ]);
+        $subscribers = $this->subscriberProviderFactory
+            ->get($this->replication)
+            ->getSubscribers();
+        $subscribers[] = make(TriggerSubscriber::class, ['replication' => $this->replication]);
+        $subscribers[] = make(HeartbeatSubscriber::class, ['replication' => $this->replication]);
 
-        foreach ($subscribers as $class) {
-            $replication->registerSubscriber(make($class, ['replication' => $this->replication]));
-            $this->logger->debug(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, $class, get_class($this)));
+        foreach ($subscribers as $subscriber) {
+            $replication->registerSubscriber($subscriber);
+            $this->logger->debug(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, get_class($subscriber), get_class($this)));
         }
 
         $replication->run();

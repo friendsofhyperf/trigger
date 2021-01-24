@@ -48,11 +48,13 @@ class TriggerDispatcher implements EventDispatcherInterface
     public function dispatch(object $event)
     {
         foreach ($this->triggerProvider->getListenersForEvent($event) as $trigger) {
+            $eventType = $event->getType();
+
             foreach ($event->getValues() as $value) {
-                $callback = function () use ($event, $value, $trigger) {
+                $callback = function () use ($eventType, $value, $trigger) {
                     $arguments = [];
 
-                    switch ($event->getType()) {
+                    switch ($eventType) {
                         case ConstEventsNames::DELETE:
                             $arguments = [$value];
                             break;

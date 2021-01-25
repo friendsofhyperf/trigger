@@ -60,6 +60,7 @@ class TriggerProviderFactory
             $instance = $container->get($class);
 
             if (! ($instance instanceof AbstractTrigger)) {
+                $this->logger->warning(sprintf('%s doesnot instanceof %s.', $class, AbstractTrigger::class));
                 continue;
             }
 

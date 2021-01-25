@@ -34,11 +34,16 @@ class SubscriberProvider
     public function getSubscribers()
     {
         $queue = new SplPriorityQueue();
+        $subscribers = [];
 
         foreach ($this->subscribers as [$subscriber, $priority]) {
             $queue->insert($subscriber, $priority);
         }
 
-        return $queue;
+        foreach ($queue as $subscriber) {
+            $subscribers[] = $subscriber;
+        }
+
+        return $subscribers;
     }
 }

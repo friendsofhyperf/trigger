@@ -29,7 +29,7 @@ class TriggerProviderFactory
     public function get(string $replication = 'default')
     {
         if (! isset($this->providers[$replication])) {
-            $this->providers[$replication] = tap(new TriggerProvider(), function ($provider, $replication) {
+            $this->providers[$replication] = tap(new TriggerProvider(), function ($provider) use ($replication) {
                 $this->registerAnnotations($provider, $replication, ApplicationContext::getContainer());
             });
         }

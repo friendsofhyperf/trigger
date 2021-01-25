@@ -3,7 +3,7 @@
     "description": "MySQL Trigger for hyperf.",
     "type": "library",
     "require": {
-        "gemini/php-mysql-replication": "^7.0",
+        "krowinski/php-mysql-replication": "^7.0",
         "hyperf/event": "^2.1",
         "hyperf/process": "^2.1",
         "hyperf/command": "^2.1",
@@ -29,9 +29,6 @@
     },
     "config": {
         "sort-packages": true
-    },
-    "suggest": {
-        "krowinski/php-mysql-replication": "update to 7.x"
     },
     "license": "MIT",
     "authors": [{

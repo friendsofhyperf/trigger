@@ -70,7 +70,7 @@ class TriggerProviderFactory
                 $provider->on($table, $event, [$instance, $method], $property->priority ?? 1);
             }
 
-            $this->logger->info(sprintf('[trigger.%s] %s [%s] registered by %s.', $this->replication, $class, implode(',', $property->events), get_class($this)));
+            $this->logger->info(sprintf('[trigger.%s] %s [%s] registered by %s.', $replication, $class, implode(',', $property->events), get_class($this)));
         }
     }
 }

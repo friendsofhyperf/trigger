@@ -23,7 +23,6 @@ class TriggerProvider implements ListenerProviderInterface
 
     /**
      * @param RowsDTO $event
-     * @return callable[]
      */
     public function getListenersForEvent(object $event): iterable
     {

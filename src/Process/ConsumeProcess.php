@@ -63,15 +63,21 @@ class ConsumeProcess extends AbstractProcess
     public function handle(): void
     {
         $replication = $this->replicationFactory->get($this->replication);
-        $subscribers = $this->subscriberProviderFactory
-            ->get($this->replication)
-            ->getSubscribers();
-        $subscribers[] = make(TriggerSubscriber::class, ['replication' => $this->replication]);
-        $subscribers[] = make(HeartbeatSubscriber::class, ['replication' => $this->replication]);
+        $subscribers = with(
+            $this->subscriberProviderFactory
+                ->get($this->replication)
+                ->getSubscribers(),
+            function ($subscribers) {
+                $subscribers[] = make(TriggerSubscriber::class, ['replication' => $this->replication]);
+                $subscribers[] = make(HeartbeatSubscriber::class, ['replication' => $this->replication]);
+
+                return $subscribers;
+            }
+        );
 
         foreach ($subscribers as $subscriber) {
             $replication->registerSubscriber($subscriber);
-            $this->logger->debug(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, get_class($subscriber), get_class($this)));
+            $this->logger->info(sprintf('[trigger.%s] %s registered by %s process.', $this->replication, get_class($subscriber), get_class($this)));
         }
 
         $replication->run();

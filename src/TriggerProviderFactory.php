@@ -12,6 +12,7 @@ namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use FriendsOfHyperf\Trigger\Trigger\AbstractTrigger;
+use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Utils\ApplicationContext;
 use Psr\Container\ContainerInterface;
@@ -22,6 +23,16 @@ class TriggerProviderFactory
      * @var TriggerProvider[]
      */
     protected $providers = [];
+
+    /**
+     * @var StdoutLoggerInterface
+     */
+    protected $logger;
+
+    public function __construct(ContainerInterface $container)
+    {
+        $this->logger = $container->get(StdoutLoggerInterface::class);
+    }
 
     /**
      * @return TriggerProvider
@@ -58,6 +69,8 @@ class TriggerProviderFactory
                 $method = 'on' . ucfirst(strtolower($event)); // onWrite/onUpdate/onDelete
                 $provider->on($table, $event, [$instance, $method], $property->priority ?? 1);
             }
+
+            $this->logger->info(sprintf('[trigger.%s] %s [%s] registered by %s.', $this->replication, $class, implode(',', $property->events), get_class($this)));
         }
     }
 }

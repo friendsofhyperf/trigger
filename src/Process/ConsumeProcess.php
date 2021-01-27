@@ -17,7 +17,11 @@ use FriendsOfHyperf\Trigger\SubscriberProviderFactory;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Redis\Redis;
+use Hyperf\Utils\Arr;
 use Psr\Container\ContainerInterface;
+use Swoole\Coroutine\System;
+use Throwable;
 
 class ConsumeProcess extends AbstractProcess
 {
@@ -32,9 +36,29 @@ class ConsumeProcess extends AbstractProcess
     protected $container;
 
     /**
+     * @var int
+     */
+    protected $mutexExpires = 3;
+
+    /**
+     * @var bool
+     */
+    protected $onOneServer = false;
+
+    /**
+     * @var Redis
+     */
+    protected $redis;
+
+    /**
      * @var ReplicationFactory
      */
     protected $replicationFactory;
+
+    /**
+     * @var bool
+     */
+    protected $stopped;
 
     /**
      * @var SubscriberProviderFactory
@@ -53,6 +77,7 @@ class ConsumeProcess extends AbstractProcess
         $this->subscriberProviderFactory = $container->get(SubscriberProviderFactory::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
+        $this->redis = $container->get(Redis::class);
 
         $config = $container->get(ConfigInterface::class)->get('trigger.' . $this->replication);
 
@@ -61,6 +86,93 @@ class ConsumeProcess extends AbstractProcess
     }
 
     public function handle(): void
+    {
+        if (! $this->onOneServer) {
+            $this->run();
+        }
+
+        $this->runOnOnServer();
+    }
+
+    public function runOnOnServer(): void
+    {
+        while (true) {
+            // get lock
+            if ((bool) $this->redis->set($this->getMutexName(), $this->getMacAddress(), ['NX', 'EX' => $this->getMutexExpires()])) {
+                break;
+            }
+
+            $this->logger->info('waiting.');
+            sleep(1);
+        }
+
+        try {
+            // keepalive
+            go(function () {
+                while (true) {
+                    $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
+                    $this->logger->info('refresh.');
+
+                    if ($this->isStopped()) {
+                        break;
+                    }
+
+                    sleep(1);
+                }
+            });
+
+            // wait signal
+            foreach ([SIGTERM, SIGINT] as $signal) {
+                go(function () use ($signal) {
+                    while (true) {
+                        $ret = System::waitSignal($signal, $this->config->get('signal.timeout', 5.0));
+
+                        if ($ret) {
+                            $this->setStopped(true);
+                        }
+
+                        if ($this->isStopped()) {
+                            break;
+                        }
+                    }
+                });
+            }
+
+            // run
+            $this->logger->info('running.');
+            $this->run();
+        } catch (Throwable $e) {
+            $this->logger->warning('exit, error:' . $e->getMessage());
+        } finally {
+            // release
+            $this->redis->del($this->getMutexName());
+            $this->logger->info('release.');
+        }
+    }
+
+    public function setStopped(bool $stopped): self
+    {
+        $this->stopped = $stopped;
+
+        return $this;
+    }
+
+    public function isStopped(): bool
+    {
+        return $this->stopped;
+    }
+
+    public function getMutexName(): string
+    {
+        return 'trigger:mutex:' . $this->name;
+    }
+
+    public function getMutexExpires(): int
+    {
+        return (int) $this->mutexExpires;
+    }
+
+    public function run(): void
     {
         $replication = $this->replicationFactory->get($this->replication);
         $subscribers = with(
@@ -81,5 +193,18 @@ class ConsumeProcess extends AbstractProcess
         }
 
         $replication->run();
+    }
+
+    protected function getMacAddress(): ?string
+    {
+        $macAddresses = swoole_get_local_mac();
+
+        foreach (Arr::wrap($macAddresses) as $name => $address) {
+            if ($address && $address !== '00:00:00:00:00:00') {
+                return $name . ':' . str_replace(':', '', $address);
+            }
+        }
+
+        return null;
     }
 }

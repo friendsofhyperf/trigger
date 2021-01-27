@@ -28,6 +28,9 @@
             "config": "FriendsOfHyperf\\Trigger\\ConfigProvider"
         }
     },
+    "suggest": {
+        "hyperf/redis": "Required to use Redis as mutex."
+    },
     "config": {
         "sort-packages": true
     },

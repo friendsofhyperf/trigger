@@ -26,6 +26,11 @@ use Throwable;
 class ConsumeProcess extends AbstractProcess
 {
     /**
+     * @var ConfigInterface
+     */
+    protected $config;
+
+    /**
      * @var string
      */
     protected $replication = 'default';
@@ -78,6 +83,7 @@ class ConsumeProcess extends AbstractProcess
         $this->replicationFactory = $container->get(ReplicationFactory::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->redis = $container->get(Redis::class);
+        $this->config = $container->get(ConfigInterface::class);
 
         $config = $container->get(ConfigInterface::class)->get('trigger.' . $this->replication);
 
@@ -102,7 +108,7 @@ class ConsumeProcess extends AbstractProcess
                 break;
             }
 
-            $this->logger->info(sprintf('[trigger.%s] waiting mutex.', $this->replication));
+            $this->logger->info(sprintf('⚠️[trigger.%s] waiting mutex.', $this->replication));
             sleep(1);
         }
 
@@ -111,7 +117,7 @@ class ConsumeProcess extends AbstractProcess
             go(function () {
                 while (true) {
                     $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
-                    $this->logger->info(sprintf('[trigger.%s] keepalive.', $this->replication));
+                    $this->logger->info(sprintf('⚠️[trigger.%s] keepalive.', $this->replication));
 
                     if ($this->isStopped()) {
                         break;
@@ -128,6 +134,7 @@ class ConsumeProcess extends AbstractProcess
                         $ret = System::waitSignal($signal, $this->config->get('signal.timeout', 5.0));
 
                         if ($ret) {
+                            $this->logger->info(sprintf('⚠️[trigger.%s] stopped.', $this->replication));
                             $this->setStopped(true);
                         }
 
@@ -139,14 +146,14 @@ class ConsumeProcess extends AbstractProcess
             }
 
             // run
-            $this->logger->info(sprintf('[trigger.%s] running.', $this->replication));
+            $this->logger->info(sprintf('⚠️[trigger.%s] running.', $this->replication));
             $this->run();
         } catch (Throwable $e) {
-            $this->logger->warning(sprintf('[trigger.%s] exit, error:%s', $this->replication, $e->getMessage()));
+            $this->logger->warning(sprintf('⚠️[trigger.%s] exit, error:%s', $this->replication, $e->getMessage()));
         } finally {
             // release
             $this->redis->del($this->getMutexName());
-            $this->logger->info(sprintf('[trigger.%s] release mutex.', $this->replication));
+            $this->logger->info(sprintf('⚠️[trigger.%s] release mutex.', $this->replication));
         }
     }
 

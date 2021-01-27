@@ -102,12 +102,13 @@ class ConsumeProcess extends AbstractProcess
         while (true) {
             // get lock
             if ((bool) $this->redis->set($this->getMutexName(), $this->getMacAddress(), ['NX', 'EX' => $this->getMutexExpires()])) {
-                $this->logger->debug(sprintf('⚠️[trigger.%s] got mutex by %s.', $this->replication, get_class($this)));
+                $this->info('got mutex');
                 break;
             }
 
-            $this->logger->debug(sprintf('⚠️[trigger.%s] waiting mutex by %s.', $this->replication, get_class($this)));
-            Coroutine::sleep(3);
+            $this->info('waiting mutex');
+
+            sleep(1);
         }
 
         try {
@@ -115,22 +116,21 @@ class ConsumeProcess extends AbstractProcess
             Coroutine::create(function () {
                 while (true) {
                     $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
-                    $this->logger->debug(sprintf('⚠️[trigger.%s] ttl=%s by %s.', $this->replication, $this->redis->ttl($this->getMutexName()), get_class($this)));
-                    $this->logger->debug(sprintf('⚠️[trigger.%s] keepalive running by %s.', $this->replication, get_class($this)));
+                    $this->info(sprintf('keepalive running [ttl=%s]', $this->redis->ttl($this->getMutexName())));
 
                     if ($this->isStopped()) {
-                        $this->logger->debug(sprintf('⚠️[trigger.%s] keepalive exited by %s.', $this->replication, get_class($this)));
+                        $this->info('keepalive exited');
                         break;
                     }
 
-                    Coroutine::sleep(3);
+                    sleep(1);
                 }
             });
 
             // wait signal
             foreach ([SIGTERM, SIGINT] as $signal) {
                 Coroutine::create(function () use ($signal) {
-                    $this->logger->debug(sprintf('⚠️[trigger.%s] listen signal[%s] by %s.', $this->replication, $signal, get_class($this)));
+                    $this->info('listening signal');
 
                     while (true) {
                         $ret = System::waitSignal($signal, $this->config->get('signal.timeout', 5.0));
@@ -140,7 +140,7 @@ class ConsumeProcess extends AbstractProcess
                         }
 
                         if ($this->isStopped()) {
-                            $this->logger->debug(sprintf('⚠️[trigger.%s] stopped by %s.', $this->replication, get_class($this)));
+                            $this->info('signal listener exited');
                             break;
                         }
                     }
@@ -148,15 +148,15 @@ class ConsumeProcess extends AbstractProcess
             }
 
             // run
-            $this->logger->debug(sprintf('⚠️[trigger.%s] running by %s.', $this->replication, get_class($this)));
+            $this->info('running');
             $this->run();
-            $this->logger->debug(sprintf('⚠️[trigger.%s] exited by %s.', $this->replication, get_class($this)));
+            $this->info('exited');
         } catch (Throwable $e) {
-            $this->logger->warning(sprintf('⚠️[trigger.%s] exit, error:% by %s.', $this->replication, get_class($this), $e->getMessage()));
+            $this->info(sprintf('exit, error:%s', $e->getMessage()));
         } finally {
             // release
             $this->redis->del($this->getMutexName());
-            $this->logger->debug(sprintf('⚠️[trigger.%s] release mutex by %s.', $this->replication, get_class($this)));
+            $this->info('release mutex');
         }
     }
 
@@ -203,6 +203,23 @@ class ConsumeProcess extends AbstractProcess
         }
 
         $replication->run();
+    }
+
+    protected function info(string $message = '', array $context = [])
+    {
+        $message = sprintf(
+            '⚠️ [trigger.%s] %s by %s. %s',
+            $this->replication,
+            $message,
+            get_class($this),
+            json_encode($context, JSON_UNESCAPED_UNICODE)
+        );
+
+        if ($this->logger) {
+            $this->logger->info($message);
+        } else {
+            echo $message, "\n";
+        }
     }
 
     protected function getMacAddress(): ?string

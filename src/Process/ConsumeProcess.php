@@ -85,11 +85,7 @@ class ConsumeProcess extends AbstractProcess
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->redis = $container->get(Redis::class);
         $this->config = $container->get(ConfigInterface::class);
-
-        $config = $container->get(ConfigInterface::class)->get('trigger.' . $this->replication);
-
         $this->name = "trigger.{$this->replication}";
-        $this->nums = $config['processes'] ?? 1;
     }
 
     public function handle(): void

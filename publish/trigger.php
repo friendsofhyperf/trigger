@@ -18,7 +18,6 @@ return [
         'tables_only' => env('TRIGGER_TABLES_ONLY', '') ? explode(',', env('TRIGGER_TABLES_ONLY')) : [],
         'heartbeat_period' => (int) env('TRIGGER_HEARTBEAT', 3),
 
-        'processes' => 1,
         'concurrent' => [
             'limit' => 64,
         ],

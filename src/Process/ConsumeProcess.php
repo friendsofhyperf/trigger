@@ -101,14 +101,14 @@ class ConsumeProcess extends AbstractProcess
     {
         while (true) {
             // get lock
-            if ((bool) $this->redis->set($this->getMutexName(), $this->getMacAddress(), ['NX', 'EX' => $this->getMutexExpires()])) {
+            if ((bool) $this->redis->set($this->getMutexName(), $this->getInternalIp(), ['NX', 'EX' => $this->getMutexExpires()])) {
                 $this->info('got mutex');
                 break;
             }
 
             $this->info('waiting mutex');
 
-            sleep(1);
+            System::wait(1);
         }
 
         try {
@@ -123,7 +123,7 @@ class ConsumeProcess extends AbstractProcess
                         break;
                     }
 
-                    sleep(1);
+                    System::wait(1);
                 }
             });
 
@@ -233,5 +233,19 @@ class ConsumeProcess extends AbstractProcess
         }
 
         return null;
+    }
+
+    protected function getInternalIp(): string
+    {
+        $ips = swoole_get_local_ip();
+        if (is_array($ips) && ! empty($ips)) {
+            return current($ips);
+        }
+        /** @var mixed|string $ip */
+        $ip = gethostbyname(gethostname());
+        if (is_string($ip)) {
+            return $ip;
+        }
+        throw new \RuntimeException('Can not get the internal IP.');
     }
 }

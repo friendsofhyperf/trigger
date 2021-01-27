@@ -97,6 +97,6 @@ class ReplicationFactory
      */
     protected function generateSlaveId(): int
     {
-        return (int) ip2long(Util::getInternalIp());
+        return (int) ip2long(Util::getInternalIp()) + rand(0, 999);
     }
 }

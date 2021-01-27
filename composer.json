@@ -29,7 +29,8 @@
         }
     },
     "suggest": {
-        "hyperf/redis": "Required to use Redis as mutex."
+        "hyperf/redis": "Required to use Redis client.",
+        "hyperf/signal": "Required to use Signal manager."
     },
     "config": {
         "sort-packages": true

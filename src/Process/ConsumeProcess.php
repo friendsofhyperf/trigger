@@ -102,7 +102,7 @@ class ConsumeProcess extends AbstractProcess
                 break;
             }
 
-            $this->logger->info('waiting.');
+            $this->logger->info(sprintf('[trigger.%s] waiting mutex.', $this->replication));
             sleep(1);
         }
 
@@ -111,7 +111,7 @@ class ConsumeProcess extends AbstractProcess
             go(function () {
                 while (true) {
                     $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
-                    $this->logger->info('refresh.');
+                    $this->logger->info(sprintf('[trigger.%s] keepalive.', $this->replication));
 
                     if ($this->isStopped()) {
                         break;
@@ -139,14 +139,14 @@ class ConsumeProcess extends AbstractProcess
             }
 
             // run
-            $this->logger->info('running.');
+            $this->logger->info(sprintf('[trigger.%s] running.', $this->replication));
             $this->run();
         } catch (Throwable $e) {
-            $this->logger->warning('exit, error:' . $e->getMessage());
+            $this->logger->warning(sprintf('[trigger.%s] exit, error:%s', $this->replication, $e->getMessage()));
         } finally {
             // release
             $this->redis->del($this->getMutexName());
-            $this->logger->info('release.');
+            $this->logger->info(sprintf('[trigger.%s] release mutex.', $this->replication));
         }
     }
 
@@ -164,7 +164,7 @@ class ConsumeProcess extends AbstractProcess
 
     public function getMutexName(): string
     {
-        return 'trigger:mutex:' . $this->name;
+        return 'trigger:mutex:' . $this->replication;
     }
 
     public function getMutexExpires(): int

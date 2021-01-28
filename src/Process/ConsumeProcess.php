@@ -32,6 +32,11 @@ class ConsumeProcess extends AbstractProcess
     protected $config;
 
     /**
+     * @var bool
+     */
+    protected $debug = true;
+
+    /**
      * @var string
      */
     protected $replication = 'default';
@@ -60,11 +65,6 @@ class ConsumeProcess extends AbstractProcess
      * @var ReplicationFactory
      */
     protected $replicationFactory;
-
-    /**
-     * @var bool
-     */
-    protected $stopped = false;
 
     /**
      * @var SubscriberProviderFactory
@@ -118,34 +118,10 @@ class ConsumeProcess extends AbstractProcess
                     $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
                     $this->info(sprintf('keepalive running [ttl=%s]', $this->redis->ttl($this->getMutexName())));
 
-                    if ($this->isStopped()) {
-                        $this->info('keepalive exited');
-                        break;
-                    }
-
-                    System::wait(1);
+                    // System::wait(1);
+                    sleep(1);
                 }
             });
-
-            // wait signal
-            foreach ([SIGTERM, SIGINT] as $signal) {
-                Coroutine::create(function () use ($signal) {
-                    $this->info('listening signal');
-
-                    while (true) {
-                        $ret = System::waitSignal($signal, $this->config->get('signal.timeout', 5.0));
-
-                        if ($ret) {
-                            $this->setStopped(true);
-                        }
-
-                        if ($this->isStopped()) {
-                            $this->info('signal listener exited');
-                            break;
-                        }
-                    }
-                });
-            }
 
             // run
             $this->info('running');
@@ -158,18 +134,6 @@ class ConsumeProcess extends AbstractProcess
             $this->redis->del($this->getMutexName());
             $this->info('release mutex');
         }
-    }
-
-    public function setStopped(bool $stopped): self
-    {
-        $this->stopped = $stopped;
-
-        return $this;
-    }
-
-    public function isStopped(): bool
-    {
-        return (bool) $this->stopped;
     }
 
     public function getMutexName(): string
@@ -208,12 +172,16 @@ class ConsumeProcess extends AbstractProcess
     protected function info(string $message = '', array $context = [])
     {
         $message = sprintf(
-            '⚠️ [trigger.%s] %s by %s. %s',
+            '[trigger.%s] %s by %s. %s',
             $this->replication,
             $message,
             get_class($this),
             json_encode($context, JSON_UNESCAPED_UNICODE)
         );
+
+        if (! $this->debug) {
+            return;
+        }
 
         if ($this->logger) {
             $this->logger->info($message);

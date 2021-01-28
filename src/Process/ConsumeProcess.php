@@ -99,9 +99,12 @@ class ConsumeProcess extends AbstractProcess
 
     public function runOnOnServer(): void
     {
+        $mutexName = $this->getMutexName();
+        $mutexExpires = $this->getMutexExpires();
+
         while (true) {
             // get lock
-            if ((bool) $this->redis->set($this->getMutexName(), $this->getInternalIp(), ['NX', 'EX' => $this->getMutexExpires()])) {
+            if ((bool) $this->redis->set($mutexName, $this->getInternalIp(), ['NX', 'EX' => $mutexExpires])) {
                 $this->info('got mutex');
                 break;
             }
@@ -113,10 +116,11 @@ class ConsumeProcess extends AbstractProcess
 
         try {
             // keepalive
-            Coroutine::create(function () {
+            Coroutine::create(function () use ($mutexName, $mutexExpires) {
                 while (true) {
-                    $this->redis->expire($this->getMutexName(), $this->getMutexExpires());
-                    $this->info(sprintf('keepalive running [ttl=%s]', $this->redis->ttl($this->getMutexName())));
+                    $this->info('keepalive running executing');
+                    $this->redis->expire($mutexName, $mutexExpires);
+                    $this->info(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
 
                     // System::wait(1);
                     sleep(1);
@@ -124,15 +128,15 @@ class ConsumeProcess extends AbstractProcess
             });
 
             // run
-            $this->info('running');
+            $this->info('replication running');
             $this->run();
-            $this->info('exited');
+            $this->info('replication exited');
         } catch (Throwable $e) {
-            $this->info(sprintf('exit, error:%s', $e->getMessage()));
+            $this->info(sprintf('replication exited, error:%s', $e->getMessage()));
         } finally {
             // release
             $this->redis->del($this->getMutexName());
-            $this->info('release mutex');
+            $this->info('mutex released');
         }
     }
 

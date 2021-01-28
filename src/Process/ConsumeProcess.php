@@ -118,7 +118,7 @@ class ConsumeProcess extends AbstractProcess
             // keepalive
             Coroutine::create(function () use ($mutexName, $mutexExpires) {
                 while (true) {
-                    $this->info('keepalive running executing');
+                    $this->info('keepalive executing');
                     $this->redis->expire($mutexName, $mutexExpires);
                     $this->info(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
 

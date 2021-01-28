@@ -49,7 +49,7 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var int
      */
-    protected $mutexExpires = 5;
+    protected $mutexExpires = 60;
 
     /**
      * @var bool

@@ -67,6 +67,11 @@ class ConsumeProcess extends AbstractProcess
     protected $replicationFactory;
 
     /**
+     * @var bool
+     */
+    protected $stopped = false;
+
+    /**
      * @var SubscriberProviderFactory
      */
     protected $subscriberProviderFactory;
@@ -111,7 +116,8 @@ class ConsumeProcess extends AbstractProcess
 
             $this->info('waiting mutex');
 
-            System::wait(1);
+            // System::wait(1);
+            sleep(1);
         }
 
         try {
@@ -121,6 +127,11 @@ class ConsumeProcess extends AbstractProcess
                     $this->info('keepalive executing');
                     $this->redis->expire($mutexName, $mutexExpires);
                     $this->info(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
+
+                    if ($this->isStopped()) {
+                        $this->info('keepalive stopped');
+                        break;
+                    }
 
                     // System::wait(1);
                     sleep(1);
@@ -136,6 +147,7 @@ class ConsumeProcess extends AbstractProcess
         } finally {
             // release
             $this->redis->del($this->getMutexName());
+            $this->setStopped(true);
             $this->info('mutex released');
         }
     }
@@ -148,6 +160,18 @@ class ConsumeProcess extends AbstractProcess
     public function getMutexExpires(): int
     {
         return (int) $this->mutexExpires;
+    }
+
+    public function isStopped(): bool
+    {
+        return $this->stopped;
+    }
+
+    public function setStopped(bool $stopped): self
+    {
+        $this->stopped = $stopped;
+
+        return $this;
     }
 
     public function run(): void

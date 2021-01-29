@@ -251,8 +251,8 @@ class ConsumeProcess extends AbstractProcess
 
     protected function isMonitor(): bool
     {
-        if (isset($this->monitor)) {
-            return (bool) $this->monitor;
+        if (isset($this->monitor) && is_bool($this->monitor)) {
+            return $this->monitor;
         }
 
         return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);

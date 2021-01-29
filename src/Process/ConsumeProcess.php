@@ -22,7 +22,6 @@ use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
-use Swoole\Coroutine\System;
 use Throwable;
 
 class ConsumeProcess extends AbstractProcess
@@ -133,7 +132,6 @@ class ConsumeProcess extends AbstractProcess
 
             $this->info('waiting mutex');
 
-            // System::wait(1);
             sleep(1);
         }
 
@@ -152,7 +150,6 @@ class ConsumeProcess extends AbstractProcess
                     $this->redis->expire($mutexName, $mutexExpires);
                     $this->info(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
 
-                    // System::wait(1);
                     sleep(1);
                 }
             });
@@ -160,10 +157,10 @@ class ConsumeProcess extends AbstractProcess
             // run
             $this->info('replication running');
             $this->run();
-            $this->info('replication exited');
         } catch (Throwable $e) {
             $this->info(sprintf('replication exited, error:%s', $e->getMessage()));
         } finally {
+            $this->info('replication exited');
             // release
             $this->redis->del($this->getMutexName());
             $this->setStopped(true);

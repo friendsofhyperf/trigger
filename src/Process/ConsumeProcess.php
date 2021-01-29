@@ -58,6 +58,11 @@ class ConsumeProcess extends AbstractProcess
     protected $monitor;
 
     /**
+     * @var int
+     */
+    protected $monitorInterval = 5;
+
+    /**
      * @var bool
      */
     protected $onOneServer = false;
@@ -190,6 +195,7 @@ class ConsumeProcess extends AbstractProcess
 
     public function run(): void
     {
+        // prepare subscribers
         $replication = $this->replicationFactory->get($this->replication);
         $subscribers = with(
             $this->subscriberProviderFactory
@@ -203,14 +209,38 @@ class ConsumeProcess extends AbstractProcess
             }
         );
 
+        // register subscribers
         foreach ($subscribers as $subscriber) {
             $replication->registerSubscriber($subscriber);
             $this->logger->info(sprintf('[trigger.%s] %s registered by %s process by %s.', $this->replication, get_class($this), get_class($subscriber), get_class($this)));
         }
 
         // monitor
-        $this->isMonitor() && Coroutine::create(function () {
-            sleep(3);
+        $this->runMonitor();
+
+        // run
+        $replication->run();
+    }
+
+    protected function isMonitor(): bool
+    {
+        if (isset($this->monitor) && is_bool($this->monitor)) {
+            return $this->monitor;
+        }
+
+        return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
+    }
+
+    protected function runMonitor(): void
+    {
+        if (! $this->isMonitor()) {
+            return;
+        }
+
+        Coroutine::create(function () {
+            $interval = $this->getMonitorInterval();
+
+            sleep($interval);
 
             /** @var null|BinLogCurrent $binLogCache */
             $binLogCache = null;
@@ -230,13 +260,13 @@ class ConsumeProcess extends AbstractProcess
 
                 if (! ($binLogCurrent instanceof BinLogCurrent)) {
                     $this->info('replication not run yet');
-                    sleep(1);
+                    sleep($interval);
                     continue;
                 }
 
                 if (! ($binLogCache instanceof BinLogCurrent)) {
                     $binLogCache = $binLogCurrent;
-                    sleep(1);
+                    sleep($interval);
                     continue;
                 }
 
@@ -248,20 +278,21 @@ class ConsumeProcess extends AbstractProcess
 
                 $this->info('monitor executed');
 
-                sleep(3);
+                sleep($interval);
             }
         });
-
-        $replication->run();
     }
 
-    protected function isMonitor(): bool
+    protected function getMonitorInterval(): int
     {
-        if (isset($this->monitor) && is_bool($this->monitor)) {
-            return $this->monitor;
-        }
+        return (int) $this->monitorInterval;
+    }
 
-        return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
+    protected function setMonitorInterval(int $seconds): self
+    {
+        $this->monitorInterval = $seconds;
+
+        return $this;
     }
 
     protected function onReplicationStopped(BinLogCurrent $binLogCurrent): void

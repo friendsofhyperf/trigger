@@ -33,19 +33,14 @@ class ConsumeProcess extends AbstractProcess
     protected $config;
 
     /**
-     * @var bool
-     */
-    protected $debug = true;
-
-    /**
-     * @var string
-     */
-    protected $replication = 'default';
-
-    /**
      * @var ContainerInterface
      */
     protected $container;
+
+    /**
+     * @var bool
+     */
+    protected $debug = true;
 
     /**
      * @var StdoutLoggerInterface
@@ -60,12 +55,27 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var bool
      */
+    protected $monitor;
+
+    /**
+     * @var bool
+     */
     protected $onOneServer = false;
+
+    /**
+     * @var PositionFactory
+     */
+    protected $positionFactory;
 
     /**
      * @var Redis
      */
     protected $redis;
+
+    /**
+     * @var string
+     */
+    protected $replication = 'default';
 
     /**
      * @var ReplicationFactory
@@ -88,6 +98,7 @@ class ConsumeProcess extends AbstractProcess
 
         $this->subscriberProviderFactory = $container->get(SubscriberProviderFactory::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
+        $this->positionFactory = $container->get(PositionFactory::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->redis = $container->get(Redis::class);
         $this->config = $container->get(ConfigInterface::class);
@@ -203,10 +214,7 @@ class ConsumeProcess extends AbstractProcess
 
             /** @var null|BinLogCurrent $binLogCache */
             $binLogCache = null;
-
-            /** @var PositionFactory $positionFactory */
-            $positionFactory = $this->container->get(PositionFactory::class);
-            $position = $positionFactory->get($this->replication);
+            $position = $this->positionFactory->get($this->replication);
 
             $this->info('monitor start');
 
@@ -243,6 +251,10 @@ class ConsumeProcess extends AbstractProcess
 
     protected function isMonitor(): bool
     {
+        if (isset($this->monitor)) {
+            return (bool) $this->monitor;
+        }
+
         return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
     }
 

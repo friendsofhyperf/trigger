@@ -224,12 +224,6 @@ class ConsumeProcess extends AbstractProcess
                     break;
                 }
 
-                if (! ($binLogCache instanceof BinLogCurrent)) {
-                    $this->info('$binLogCache not instanceof BinLogCurrent');
-                    sleep(1);
-                    continue;
-                }
-
                 $this->info('monitor executing');
 
                 $binLogCurrent = $position->get();
@@ -240,8 +234,10 @@ class ConsumeProcess extends AbstractProcess
                     continue;
                 }
 
-                if ($binLogCurrent->getBinLogPosition() == $binLogCache->getBinLogPosition()) {
-                    $this->onReplicationStopped($binLogCurrent);
+                if (($binLogCache instanceof BinLogCurrent)) {
+                    if ($binLogCurrent->getBinLogPosition() == $binLogCache->getBinLogPosition()) {
+                        $this->onReplicationStopped($binLogCurrent);
+                    }
                 }
 
                 $binLogCache = $binLogCurrent;

@@ -215,7 +215,6 @@ class ConsumeProcess extends AbstractProcess
             /** @var null|BinLogCurrent $binLogCache */
             $binLogCache = null;
             $position = $this->positionFactory->get($this->replication);
-            $count = 0;
 
             $this->info('monitor start');
 
@@ -242,12 +241,7 @@ class ConsumeProcess extends AbstractProcess
                 }
 
                 if ($binLogCurrent->getBinLogPosition() == $binLogCache->getBinLogPosition()) {
-                    ++$count;
-                    if ($count >= 3) {
-                        $this->onReplicationStopped($binLogCurrent);
-                    }
-                } else {
-                    $count = 0;
+                    $this->onReplicationStopped($binLogCurrent);
                 }
 
                 $binLogCache = $binLogCurrent;

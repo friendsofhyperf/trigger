@@ -268,7 +268,7 @@ class ConsumeProcess extends AbstractProcess
 
                 $binLogCache = $binLogCurrent;
 
-                $this->debug('monitor executed');
+                $this->debug(sprintf('monitor executed, [binlogFileName:%s binlogPosition:%s]', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
 
                 sleep($interval);
             }

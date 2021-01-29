@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Process;
 
+use FriendsOfHyperf\Trigger\PositionFactory;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
 use FriendsOfHyperf\Trigger\Subscriber\HeartbeatSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
@@ -18,8 +19,8 @@ use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
 use Hyperf\Redis\Redis;
-use Hyperf\Utils\Arr;
 use Hyperf\Utils\Coroutine;
+use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
 use Swoole\Coroutine\System;
 use Throwable;
@@ -45,6 +46,11 @@ class ConsumeProcess extends AbstractProcess
      * @var ContainerInterface
      */
     protected $container;
+
+    /**
+     * @var StdoutLoggerInterface
+     */
+    protected $logger;
 
     /**
      * @var int
@@ -75,11 +81,6 @@ class ConsumeProcess extends AbstractProcess
      * @var SubscriberProviderFactory
      */
     protected $subscriberProviderFactory;
-
-    /**
-     * @var StdoutLoggerInterface
-     */
-    protected $logger;
 
     public function __construct(ContainerInterface $container)
     {
@@ -123,6 +124,8 @@ class ConsumeProcess extends AbstractProcess
         try {
             // keepalive
             Coroutine::create(function () use ($mutexName, $mutexExpires) {
+                $this->info('keepalive start');
+
                 while (true) {
                     if ($this->isStopped()) {
                         $this->info('keepalive stopped');
@@ -194,7 +197,58 @@ class ConsumeProcess extends AbstractProcess
             $this->logger->info(sprintf('[trigger.%s] %s registered by %s process by %s.', $this->replication, get_class($this), get_class($subscriber), get_class($this)));
         }
 
+        // monitor
+        $this->isMonitor() && Coroutine::create(function () {
+            sleep(3);
+
+            /** @var null|BinLogCurrent $binLogCache */
+            $binLogCache = null;
+
+            /** @var PositionFactory $positionFactory */
+            $positionFactory = $this->container->get(PositionFactory::class);
+            $position = $positionFactory->get($this->replication);
+
+            $this->info('monitor start');
+
+            while (true) {
+                if ($this->isStopped()) {
+                    $this->info('monitor stopped');
+                    break;
+                }
+
+                if (! ($binLogCache instanceof BinLogCurrent)) {
+                    continue;
+                }
+
+                $this->info('monitor executing');
+
+                $binLogCurrent = $position->get();
+
+                if (! ($binLogCurrent instanceof BinLogCurrent)) {
+                    continue;
+                }
+
+                if ($binLogCurrent->getBinLogPosition() == $binLogCache->getBinLogPosition()) {
+                    $this->onReplicationStopped($binLogCurrent);
+                }
+
+                $binLogCache = $binLogCurrent;
+
+                sleep(3);
+            }
+        });
+
         $replication->run();
+    }
+
+    protected function isMonitor(): bool
+    {
+        return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
+    }
+
+    protected function onReplicationStopped(BinLogCurrent $binLogCurrent): void
+    {
+        $this->info(sprintf('replication stopped, binlogFileName:%s, binlogPosition:%s', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
     }
 
     protected function info(string $message = '', array $context = [])
@@ -218,30 +272,21 @@ class ConsumeProcess extends AbstractProcess
         }
     }
 
-    protected function getMacAddress(): ?string
-    {
-        $macAddresses = swoole_get_local_mac();
-
-        foreach (Arr::wrap($macAddresses) as $name => $address) {
-            if ($address && $address !== '00:00:00:00:00:00') {
-                return $name . ':' . str_replace(':', '', $address);
-            }
-        }
-
-        return null;
-    }
-
     protected function getInternalIp(): string
     {
         $ips = swoole_get_local_ip();
+
         if (is_array($ips) && ! empty($ips)) {
             return current($ips);
         }
+
         /** @var mixed|string $ip */
         $ip = gethostbyname(gethostname());
+
         if (is_string($ip)) {
             return $ip;
         }
+
         throw new \RuntimeException('Can not get the internal IP.');
     }
 }

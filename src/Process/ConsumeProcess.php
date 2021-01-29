@@ -225,6 +225,7 @@ class ConsumeProcess extends AbstractProcess
                 }
 
                 if (! ($binLogCache instanceof BinLogCurrent)) {
+                    $this->info('$binLogCache not instanceof BinLogCurrent');
                     sleep(1);
                     continue;
                 }
@@ -234,6 +235,7 @@ class ConsumeProcess extends AbstractProcess
                 $binLogCurrent = $position->get();
 
                 if (! ($binLogCurrent instanceof BinLogCurrent)) {
+                    $this->info('$binLogCurrent not instanceof BinLogCurrent');
                     sleep(1);
                     continue;
                 }

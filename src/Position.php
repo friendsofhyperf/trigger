@@ -10,35 +10,37 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
+use Hyperf\Contract\ConfigInterface;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
 use Psr\SimpleCache\CacheInterface;
 
 class Position
 {
-    const CACHE_KEY_PREFIX = 'trigger_binlog_current:';
-
     const CACHE_TTL = 3600;
-
-    /**
-     * @var string
-     */
-    protected $replication;
 
     /**
      * @var CacheInterface
      */
     protected $cache;
 
+    /**
+     * @var string
+     */
+    protected $cacheKey;
+
     public function __construct(ContainerInterface $container, string $replication = '')
     {
-        $this->replication = $replication;
+        /** @var ConfigInterface $config */
+        $config = $container->get(ConfigInterface::class);
+        $host = $config->get(sprintf('trigger.%s.host', $replication), '127.0.0.1');
+        $this->cacheKey = sprintf('trigger_binlog_current:%s:%s', $replication, $host);
         $this->cache = $container->get(CacheInterface::class);
     }
 
-    public function set(BinLogCurrent $binLogCurrent)
+    public function set(BinLogCurrent $binLogCurrent): void
     {
-        $this->cache->set(self::CACHE_KEY_PREFIX . $this->replication, $binLogCurrent, self::CACHE_TTL);
+        $this->cache->set($this->cacheKey, $binLogCurrent, self::CACHE_TTL);
     }
 
     /**
@@ -46,6 +48,6 @@ class Position
      */
     public function get()
     {
-        return $this->cache->get(self::CACHE_KEY_PREFIX . $this->replication) ?: null;
+        return $this->cache->get($this->cacheKey) ?: null;
     }
 }

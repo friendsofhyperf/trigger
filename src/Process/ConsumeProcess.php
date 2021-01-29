@@ -37,11 +37,6 @@ class ConsumeProcess extends AbstractProcess
     protected $container;
 
     /**
-     * @var bool
-     */
-    protected $debug = true;
-
-    /**
      * @var StdoutLoggerInterface
      */
     protected $logger;
@@ -126,11 +121,11 @@ class ConsumeProcess extends AbstractProcess
         while (true) {
             // get lock
             if ((bool) $this->redis->set($mutexName, $this->getInternalIp(), ['NX', 'EX' => $mutexExpires])) {
-                $this->info('got mutex');
+                $this->debug('got mutex');
                 break;
             }
 
-            $this->info('waiting mutex');
+            $this->debug('waiting mutex');
 
             sleep(1);
         }
@@ -138,33 +133,33 @@ class ConsumeProcess extends AbstractProcess
         try {
             // keepalive
             Coroutine::create(function () use ($mutexName, $mutexExpires) {
-                $this->info('keepalive start');
+                $this->debug('keepalive start');
 
                 while (true) {
                     if ($this->isStopped()) {
-                        $this->info('keepalive stopped');
+                        $this->debug('keepalive stopped');
                         break;
                     }
 
-                    $this->info('keepalive executing');
+                    $this->debug('keepalive executing');
                     $this->redis->expire($mutexName, $mutexExpires);
-                    $this->info(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
+                    $this->debug(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
 
                     sleep(1);
                 }
             });
 
             // run
-            $this->info('replication running');
+            $this->debug('replication running');
             $this->run();
         } catch (Throwable $e) {
-            $this->info(sprintf('replication exited, error:%s', $e->getMessage()));
+            $this->debug(sprintf('replication exited, error:%s', $e->getMessage()));
         } finally {
-            $this->info('replication exited');
+            $this->debug('replication exited');
             // release
             $this->redis->del($this->getMutexName());
             $this->setStopped(true);
-            $this->info('mutex released');
+            $this->debug('mutex released');
         }
     }
 
@@ -243,20 +238,20 @@ class ConsumeProcess extends AbstractProcess
             $binLogCache = null;
             $position = $this->positionFactory->get($this->replication);
 
-            $this->info('monitor start');
+            $this->debug('monitor start');
 
             while (true) {
                 if ($this->isStopped()) {
-                    $this->info('monitor stopped');
+                    $this->debug('monitor stopped');
                     break;
                 }
 
-                $this->info('monitor executing');
+                $this->debug('monitor executing');
 
                 $binLogCurrent = $position->get();
 
                 if (! ($binLogCurrent instanceof BinLogCurrent)) {
-                    $this->info('replication not run yet');
+                    $this->debug('replication not run yet');
                     sleep($interval);
                     continue;
                 }
@@ -273,7 +268,7 @@ class ConsumeProcess extends AbstractProcess
 
                 $binLogCache = $binLogCurrent;
 
-                $this->info('monitor executed');
+                $this->debug('monitor executed');
 
                 sleep($interval);
             }
@@ -294,28 +289,24 @@ class ConsumeProcess extends AbstractProcess
 
     protected function onReplicationStopped(BinLogCurrent $binLogCurrent): void
     {
-        $this->info(sprintf('replication stopped, binlogFileName:%s, binlogPosition:%s', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
+        $this->debug(sprintf('replication stopped, binlogFileName:%s, binlogPosition:%s', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
     }
 
-    protected function info(string $message = '', array $context = [])
+    protected function debug(string $message = '', array $context = []): void
     {
-        $message = sprintf(
-            '[trigger.%s] %s by %s. %s',
-            $this->replication,
-            $message,
-            get_class($this),
-            json_encode($context, JSON_UNESCAPED_UNICODE)
-        );
+        // $message = sprintf(
+        //     '[trigger.%s] %s by %s. %s',
+        //     $this->replication,
+        //     $message,
+        //     get_class($this),
+        //     json_encode($context, JSON_UNESCAPED_UNICODE)
+        // );
 
-        if (! $this->debug) {
-            return;
-        }
-
-        if ($this->logger) {
-            $this->logger->info($message);
-        } else {
-            echo $message, "\n";
-        }
+        // if ($this->logger) {
+        //     $this->logger->info($message);
+        // } else {
+        //     echo $message, "\n";
+        // }
     }
 
     protected function getInternalIp(): string

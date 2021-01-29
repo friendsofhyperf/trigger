@@ -14,8 +14,7 @@ use FriendsOfHyperf\Trigger\Position;
 use FriendsOfHyperf\Trigger\PositionFactory;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
-use MySQLReplication\Definitions\ConstEventsNames;
-use MySQLReplication\Event\DTO\HeartbeatDTO;
+use MySQLReplication\Event\DTO\EventDTO;
 use Psr\Container\ContainerInterface;
 
 class HeartbeatSubscriber extends AbstractSubscriber
@@ -50,14 +49,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
         }
     }
 
-    public static function getSubscribedEvents(): array
-    {
-        return [
-            ConstEventsNames::HEARTBEAT => 'onHeartbeat',
-        ];
-    }
-
-    public function onHeartbeat(HeartbeatDTO $event): void
+    protected function allEvents(EventDTO $event): void
     {
         $callback = function () use ($event) {
             $this->position->set($event->getEventInfo()->getBinLogCurrent());

@@ -10,22 +10,25 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Process;
 
+use FriendsOfHyperf\Trigger\Monitor\ReplicationMonitor;
+use FriendsOfHyperf\Trigger\Mutex\RedisServerMutex;
 use FriendsOfHyperf\Trigger\PositionFactory;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
 use FriendsOfHyperf\Trigger\Subscriber\HeartbeatSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use FriendsOfHyperf\Trigger\SubscriberProviderFactory;
+use FriendsOfHyperf\Trigger\Traits\Debug;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
 use Hyperf\Redis\Redis;
-use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
-use Throwable;
 
 class ConsumeProcess extends AbstractProcess
 {
+    use Debug;
+
     /**
      * @var ConfigInterface
      */
@@ -109,57 +112,12 @@ class ConsumeProcess extends AbstractProcess
         if (! $this->onOneServer) {
             $this->run();
         } else {
-            $this->runOnOnServer();
-        }
-    }
+            /** @var RedisServerMutex $mutex */
+            $mutex = make(RedisServerMutex::class, ['process' => $this]);
 
-    public function runOnOnServer(): void
-    {
-        $mutexName = $this->getMutexName();
-        $mutexExpires = $this->getMutexExpires();
-
-        while (true) {
-            // get lock
-            if ((bool) $this->redis->set($mutexName, $this->getInternalIp(), ['NX', 'EX' => $mutexExpires])) {
-                $this->debug('got mutex');
-                break;
-            }
-
-            $this->debug('waiting mutex');
-
-            sleep(1);
-        }
-
-        try {
-            // keepalive
-            Coroutine::create(function () use ($mutexName, $mutexExpires) {
-                $this->debug('keepalive start');
-
-                while (true) {
-                    if ($this->isStopped()) {
-                        $this->debug('keepalive stopped');
-                        break;
-                    }
-
-                    $this->debug('keepalive executing');
-                    $this->redis->expire($mutexName, $mutexExpires);
-                    $this->debug(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
-
-                    sleep(1);
-                }
+            $mutex->attempt(function () {
+                $this->run();
             });
-
-            // run
-            $this->debug('replication running');
-            $this->run();
-        } catch (Throwable $e) {
-            $this->debug(sprintf('replication exited, error:%s', $e->getMessage()));
-        } finally {
-            $this->debug('replication exited');
-            // release
-            $this->redis->del($this->getMutexName());
-            $this->setStopped(true);
-            $this->debug('mutex released');
         }
     }
 
@@ -173,16 +131,33 @@ class ConsumeProcess extends AbstractProcess
         return (int) $this->mutexExpires;
     }
 
+    public function getOwner(): string
+    {
+        return $this->getInternalIp();
+    }
+
+    public function getMonitorInterval(): int
+    {
+        return (int) $this->monitorInterval;
+    }
+
+    public function getReplication(): string
+    {
+        return $this->replication;
+    }
+
+    public function isMonitor(): bool
+    {
+        if (isset($this->monitor) && is_bool($this->monitor)) {
+            return $this->monitor;
+        }
+
+        return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
+    }
+
     public function isStopped(): bool
     {
         return $this->stopped;
-    }
-
-    public function setStopped(bool $stopped): self
-    {
-        $this->stopped = $stopped;
-
-        return $this;
     }
 
     public function run(): void
@@ -208,81 +183,26 @@ class ConsumeProcess extends AbstractProcess
         }
 
         // monitor
-        $this->runMonitor();
+        /** @var ReplicationMonitor $monitor */
+        $monitor = make(ReplicationMonitor::class, ['process' => $this]);
+        $monitor->run(function ($binLogCurrent) {
+            $this->onReplicationStopped($binLogCurrent);
+        });
 
         // run
         $replication->run();
     }
 
-    protected function isMonitor(): bool
-    {
-        if (isset($this->monitor) && is_bool($this->monitor)) {
-            return $this->monitor;
-        }
-
-        return (bool) $this->config->get(sprintf('trigger.%s.monitor', $this->replication), false);
-    }
-
-    protected function runMonitor(): void
-    {
-        if (! $this->isMonitor()) {
-            return;
-        }
-
-        Coroutine::create(function () {
-            $interval = $this->getMonitorInterval();
-
-            sleep($interval);
-
-            /** @var null|BinLogCurrent $binLogCache */
-            $binLogCache = null;
-            $position = $this->positionFactory->get($this->replication);
-
-            $this->debug('monitor start');
-
-            while (true) {
-                if ($this->isStopped()) {
-                    $this->debug('monitor stopped');
-                    break;
-                }
-
-                $this->debug('monitor executing');
-
-                $binLogCurrent = $position->get();
-
-                if (! ($binLogCurrent instanceof BinLogCurrent)) {
-                    $this->debug('replication not run yet');
-                    sleep($interval);
-                    continue;
-                }
-
-                if (! ($binLogCache instanceof BinLogCurrent)) {
-                    $binLogCache = $binLogCurrent;
-                    sleep($interval);
-                    continue;
-                }
-
-                if ($binLogCurrent->getBinLogPosition() == $binLogCache->getBinLogPosition()) {
-                    $this->onReplicationStopped($binLogCurrent);
-                }
-
-                $binLogCache = $binLogCurrent;
-
-                $this->debug(sprintf('monitor executed, [binlogFileName:%s binlogPosition:%s]', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
-
-                sleep($interval);
-            }
-        });
-    }
-
-    protected function getMonitorInterval(): int
-    {
-        return (int) $this->monitorInterval;
-    }
-
-    protected function setMonitorInterval(int $seconds): self
+    public function setMonitorInterval(int $seconds): self
     {
         $this->monitorInterval = $seconds;
+
+        return $this;
+    }
+
+    public function setStopped(bool $stopped): self
+    {
+        $this->stopped = $stopped;
 
         return $this;
     }
@@ -290,23 +210,6 @@ class ConsumeProcess extends AbstractProcess
     protected function onReplicationStopped(BinLogCurrent $binLogCurrent): void
     {
         $this->debug(sprintf('replication stopped, binlogFileName:%s, binlogPosition:%s', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
-    }
-
-    protected function debug(string $message = '', array $context = []): void
-    {
-        // $message = sprintf(
-        //     '[trigger.%s] %s by %s. %s',
-        //     $this->replication,
-        //     $message,
-        //     get_class($this),
-        //     json_encode($context, JSON_UNESCAPED_UNICODE)
-        // );
-
-        // if ($this->logger) {
-        //     $this->logger->info($message);
-        // } else {
-        //     echo $message, "\n";
-        // }
     }
 
     protected function getInternalIp(): string

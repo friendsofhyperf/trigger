@@ -18,7 +18,7 @@ class SubscriberProvider
     /**
      * @var array[]
      */
-    protected $subscribers;
+    protected $subscribers = [];
 
     /**
      * @param AbstractSubscriber $subscriber

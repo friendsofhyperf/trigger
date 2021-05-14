@@ -48,6 +48,12 @@ class Position
      */
     public function get()
     {
-        return $this->cache->get($this->cacheKey) ?: null;
+        $binLogCurrent = $this->cache->get($this->cacheKey);
+
+        if (! ($binLogCurrent instanceof BinLogCurrent)) {
+            return null;
+        }
+
+        return $binLogCurrent;
     }
 }

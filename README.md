@@ -58,7 +58,7 @@ class SomeTableTrigger extends AbstractTrigger
 }
 ```
 
-## Costom Subscriber
+## Custom Subscriber
 
 ```php
 namespace App\Subscriber;

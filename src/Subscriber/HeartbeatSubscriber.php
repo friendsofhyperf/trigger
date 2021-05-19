@@ -58,7 +58,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
         if ($this->concurrent) {
             $this->concurrent->create($callback);
         } else {
-            parallel([$callback]);
+            co($callback);
         }
     }
 }

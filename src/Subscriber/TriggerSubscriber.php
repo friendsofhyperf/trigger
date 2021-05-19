@@ -10,7 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use Closure;
 use FriendsOfHyperf\Trigger\TriggerDispatcher;
 use FriendsOfHyperf\Trigger\TriggerDispatcherFactory;
 use Hyperf\Contract\ConfigInterface;
@@ -39,7 +38,7 @@ class TriggerSubscriber extends AbstractSubscriber
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
-        $limit = $config->get('trigger.concurrent.limit');
+        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication), 0);
 
         if ($limit && is_numeric($limit)) {
             $this->concurrent = new Concurrent((int) $limit);
@@ -62,12 +61,12 @@ class TriggerSubscriber extends AbstractSubscriber
         });
     }
 
-    protected function co(Closure $callback): void
+    protected function co(callable $callback): void
     {
         if ($this->concurrent) {
             $this->concurrent->create($callback);
         } else {
-            parallel([$callback]);
+            co($callback);
         }
     }
 }

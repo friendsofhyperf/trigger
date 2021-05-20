@@ -60,7 +60,7 @@ class RedisServerMutex implements ServerMutexInterface
                 $t2 = microtime(true);
                 $ttl = $this->redis->ttl($key);
                 $t3 = microtime(true);
-                var_dump(__METHOD__, $key, [
+                var_dump(__METHOD__, $key, $ttl, [
                     'expire' => $t2 - $t1,
                     'ttl' => $t3 - $t2,
                 ]);

@@ -49,6 +49,25 @@ class RedisServerMutex implements ServerMutexInterface
         $mutexExpires = $this->process->getMutexExpires();
         $mutexOwner = $this->process->getOwner();
 
+        Coroutine::create(function () {
+            $key = 'test';
+
+            $this->redis->set($key, 1);
+
+            while (true) {
+                $t1 = microtime(true);
+                $this->redis->expire($key, 100);
+                $t2 = microtime(true);
+                $ttl = $this->redis->ttl($key);
+                $t3 = microtime(true);
+                var_dump(__METHOD__, $key, [
+                    'expire' => $t2 - $t1,
+                    'ttl' => $t3 - $t2,
+                ]);
+                sleep(1);
+            }
+        });
+
         while (true) {
             if ((bool) $this->redis->set($mutexName, $mutexOwner, ['NX', 'EX' => $mutexExpires])) {
                 $this->debug('Got mutex');

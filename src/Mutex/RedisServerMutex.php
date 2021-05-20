@@ -22,7 +22,7 @@ class RedisServerMutex implements ServerMutexInterface
     use Debug;
 
     /**
-     * @var Redis
+     * @var \Redis
      */
     protected $redis;
 
@@ -45,33 +45,33 @@ class RedisServerMutex implements ServerMutexInterface
 
     public function attempt(callable $callback = null)
     {
+        $mutexName = $this->process->getMutexName();
+        $mutexExpires = $this->process->getMutexExpires();
+        $mutexOwner = $this->process->getOwner();
+
         while (true) {
-            if ((bool) $this->redis->set(
-                $this->process->getMutexName(),
-                $this->process->getOwner(),
-                ['NX', 'EX' => $this->process->getMutexExpires()]
-            )) {
-                $this->debug('got mutex');
+            if ((bool) $this->redis->set($mutexName, $mutexOwner, ['NX', 'EX' => $mutexExpires])) {
+                $this->debug('Got mutex');
                 break;
             }
 
-            $this->debug('waiting mutex');
+            $this->debug('Waiting mutex');
 
             sleep(1);
         }
 
-        Coroutine::create(function () {
-            $this->debug('keepalive start');
+        Coroutine::create(function () use ($mutexName, $mutexExpires) {
+            $this->debug('Keepalive start');
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->debug('keepalive stopped');
+                    $this->debug('Keepalive stopped');
                     break;
                 }
 
-                $this->debug('keepalive executing');
-                $this->redis->expire($this->process->getMutexName(), $this->process->getMutexExpires());
-                $this->debug(sprintf('keepalive executed [ttl=%s]', $this->redis->ttl($this->process->getMutexName())));
+                $this->debug('Keepalive executing');
+                $this->redis->expire($mutexName, $mutexExpires);
+                $this->debug(sprintf('Keepalive executed [ttl=%s]', $this->redis->ttl($mutexName)));
 
                 sleep(1);
             }
@@ -79,12 +79,12 @@ class RedisServerMutex implements ServerMutexInterface
 
         if ($callback) {
             try {
-                $this->debug('process running');
+                $this->debug('Process running');
                 $callback();
             } finally {
-                $this->debug('process exited');
+                $this->debug('Process exited');
                 $this->release();
-                $this->debug('mutex released');
+                $this->debug('Mutex released');
             }
         }
     }

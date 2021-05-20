@@ -70,12 +70,8 @@ class RedisServerMutex implements ServerMutexInterface
                 }
 
                 $this->debug('Keepalive executing');
-                $t1 = microtime(true);
                 $this->redis->expire($mutexName, $mutexExpires);
-                $t2 = microtime(true);
                 $ttl = $this->redis->ttl($mutexName);
-                $t3 = microtime(true);
-                $this->debug(sprintf('expire_used:%s, get_ttl_used:%s', $t2 - $t1, $t3 - $t2));
                 $this->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
 
                 sleep(1);

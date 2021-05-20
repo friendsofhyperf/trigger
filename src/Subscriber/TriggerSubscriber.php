@@ -41,9 +41,7 @@ class TriggerSubscriber extends AbstractSubscriber
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
-        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication), 0);
-
-        $logger->info(sprintf('trigger.%s.concurrent.limit', $replication) . ':' . $limit);
+        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
 
         if ($limit && is_numeric($limit)) {
             $this->concurrent = new Concurrent((int) $limit);

@@ -13,7 +13,6 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\TriggerDispatcher;
 use FriendsOfHyperf\Trigger\TriggerDispatcherFactory;
 use Hyperf\Contract\ConfigInterface;
-use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\EventDTO;
@@ -24,7 +23,7 @@ class TriggerSubscriber extends AbstractSubscriber
     /**
      * @var TriggerDispatcher
      */
-    protected $triggerDispatcher;
+    protected $dispatcher;
 
     /**
      * @var null|Concurrent
@@ -33,11 +32,9 @@ class TriggerSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
-        /** @var StdoutLoggerInterface $logger */
-        $logger = $container->get(StdoutLoggerInterface::class);
-        /** @var TriggerDispatcherFactory $triggerDispatcherFactory */
-        $triggerDispatcherFactory = $container->get(TriggerDispatcherFactory::class);
-        $this->triggerDispatcher = $triggerDispatcherFactory->get($replication);
+        /** @var TriggerDispatcherFactory $factory */
+        $factory = $container->get(TriggerDispatcherFactory::class);
+        $this->dispatcher = $factory->get($replication);
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
@@ -59,13 +56,10 @@ class TriggerSubscriber extends AbstractSubscriber
 
     protected function allEvents(EventDTO $event): void
     {
-        $this->co(function () use ($event) {
-            $this->triggerDispatcher->dispatch($event);
-        });
-    }
+        $callback = function () use ($event) {
+            $this->dispatcher->dispatch($event);
+        };
 
-    protected function co(callable $callback): void
-    {
         if ($this->concurrent) {
             $this->concurrent->create($callback);
         } else {

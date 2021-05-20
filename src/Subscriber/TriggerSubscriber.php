@@ -13,6 +13,7 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\TriggerDispatcher;
 use FriendsOfHyperf\Trigger\TriggerDispatcherFactory;
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\EventDTO;
@@ -32,6 +33,8 @@ class TriggerSubscriber extends AbstractSubscriber
 
     public function __construct(ContainerInterface $container, string $replication = 'default')
     {
+        /** @var StdoutLoggerInterface $logger */
+        $logger = $container->get(StdoutLoggerInterface::class);
         /** @var TriggerDispatcherFactory $triggerDispatcherFactory */
         $triggerDispatcherFactory = $container->get(TriggerDispatcherFactory::class);
         $this->triggerDispatcher = $triggerDispatcherFactory->get($replication);
@@ -39,6 +42,8 @@ class TriggerSubscriber extends AbstractSubscriber
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
         $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication), 0);
+
+        $logger->info(sprintf('trigger.%s.concurrent.limit', $replication) . ':' . $limit);
 
         if ($limit && is_numeric($limit)) {
             $this->concurrent = new Concurrent((int) $limit);
@@ -66,7 +71,7 @@ class TriggerSubscriber extends AbstractSubscriber
         if ($this->concurrent) {
             $this->concurrent->create($callback);
         } else {
-            co($callback);
+            $callback();
         }
     }
 }

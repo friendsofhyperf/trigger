@@ -42,7 +42,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
-        $limit = $config->get('trigger.concurrent.limit');
+        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
 
         if ($limit && is_numeric($limit)) {
             $this->concurrent = new Concurrent((int) $limit);

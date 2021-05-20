@@ -12,7 +12,6 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 
 use FriendsOfHyperf\Trigger\Position;
 use FriendsOfHyperf\Trigger\PositionFactory;
-use Hyperf\Contract\ConfigInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Event\DTO\EventDTO;
 use Psr\Container\ContainerInterface;
@@ -39,26 +38,13 @@ class HeartbeatSubscriber extends AbstractSubscriber
         /** @var PositionFactory $factory */
         $factory = $container->get(PositionFactory::class);
         $this->position = $factory->get($replication);
-
-        /** @var ConfigInterface $config */
-        $config = $container->get(ConfigInterface::class);
-        $limit = 10; // $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
-
-        // if ($limit && is_numeric($limit)) {
-        $this->concurrent = new Concurrent((int) $limit);
-        // }
+        $this->concurrent = new Concurrent(10);
     }
 
     protected function allEvents(EventDTO $event): void
     {
-        $callback = function () use ($event) {
+        $this->concurrent->create(function () use ($event) {
             $this->position->set($event->getEventInfo()->getBinLogCurrent());
-        };
-
-        if ($this->concurrent) {
-            $this->concurrent->create($callback);
-        } else {
-            $callback();
-        }
+        });
     }
 }

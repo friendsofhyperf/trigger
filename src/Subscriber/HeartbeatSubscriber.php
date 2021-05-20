@@ -42,11 +42,11 @@ class HeartbeatSubscriber extends AbstractSubscriber
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
-        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
+        $limit = 10; // $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
 
-        if ($limit && is_numeric($limit)) {
-            $this->concurrent = new Concurrent((int) $limit);
-        }
+        // if ($limit && is_numeric($limit)) {
+        $this->concurrent = new Concurrent((int) $limit);
+        // }
     }
 
     protected function allEvents(EventDTO $event): void
@@ -58,7 +58,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
         if ($this->concurrent) {
             $this->concurrent->create($callback);
         } else {
-            co($callback);
+            $callback();
         }
     }
 }

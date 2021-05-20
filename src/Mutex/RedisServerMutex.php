@@ -14,6 +14,7 @@ use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Debug;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
+use Hyperf\Utils\ApplicationContext;
 use Hyperf\Utils\Coroutine;
 use Psr\Container\ContainerInterface;
 
@@ -52,13 +53,14 @@ class RedisServerMutex implements ServerMutexInterface
         Coroutine::create(function () {
             $key = 'test';
 
-            $this->redis->set($key, 1);
+            $redis = ApplicationContext::getContainer()->get(Redis::class);
+            $redis->set($key, 1);
 
             while (true) {
                 $t1 = microtime(true);
-                $this->redis->expire($key, 100);
+                $redis->expire($key, 100);
                 $t2 = microtime(true);
-                $ttl = $this->redis->ttl($key);
+                $ttl = $redis->ttl($key);
                 $t3 = microtime(true);
                 var_dump(__METHOD__, $key, $ttl, [
                     'expire' => $t2 - $t1,

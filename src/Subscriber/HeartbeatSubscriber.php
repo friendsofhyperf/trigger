@@ -40,14 +40,17 @@ class HeartbeatSubscriber extends AbstractSubscriber
         $this->logger = $logger;
 
         Coroutine::create(function () use ($replication) {
-            $binLogTmp = null;
-            while (true) {
-                if ($this->binLogCurrent instanceof BinLogCurrent && $this->binLogCurrent != $binLogTmp) {
-                    $this->position->set($this->binLogCurrent);
-                    $this->logger->info(sprintf('[trigger.%s] BinLogCurrent %s', $replication, json_encode($this->binLogCurrent->jsonSerialize())));
-                }
+            $binLogPosition = 0;
 
-                $binLogTmp = $this->binLogCurrent;
+            while (true) {
+                if ($this->binLogCurrent instanceof BinLogCurrent && $binLogPosition != $this->binLogCurrent->getBinLogPosition()) {
+                    // update binLogCurrent to cache
+                    $this->position->set($this->binLogCurrent);
+                    // output
+                    $this->logger->info(sprintf('[trigger.%s] BinLogCurrent %s', $replication, json_encode($this->binLogCurrent->jsonSerialize())));
+                    // Update
+                    $binLogPosition = $this->binLogCurrent->getBinLogPosition();
+                }
 
                 sleep(1);
             }

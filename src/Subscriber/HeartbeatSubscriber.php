@@ -16,7 +16,6 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use MySQLReplication\Event\DTO\EventDTO;
-use Swoole\Coroutine\System;
 
 class HeartbeatSubscriber extends AbstractSubscriber
 {
@@ -67,27 +66,6 @@ class HeartbeatSubscriber extends AbstractSubscriber
                 sleep($this->interval);
             }
         });
-
-        foreach ([SIGTERM, SIGINT] as $signal) {
-            Coroutine::create(function () use ($signal, $replication) {
-                while (true) {
-                    $ret = System::waitSignal($signal, 5.0);
-
-                    if ($ret) {
-                        if ($this->binLogCurrent instanceof BinLogCurrent) {
-                            $this->position->set($this->binLogCurrent);
-                            $this->logger->info(sprintf('[trigger.%s] *BinLogCurrent: %s by %s', $replication, json_encode($this->binLogCurrent->jsonSerialize()), __CLASS__));
-                        }
-
-                        $this->stopped = true;
-                    }
-
-                    if ($this->stopped) {
-                        break;
-                    }
-                }
-            });
-        }
     }
 
     protected function allEvents(EventDTO $event): void

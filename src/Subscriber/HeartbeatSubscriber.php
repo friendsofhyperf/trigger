@@ -78,6 +78,8 @@ class HeartbeatSubscriber extends AbstractSubscriber
                             $this->position->set($this->binLogCurrent);
                             $this->logger->info(sprintf('[trigger.%s] *BinLogCurrent: %s by %s', $replication, json_encode($this->binLogCurrent->jsonSerialize()), __CLASS__));
                         }
+
+                        $this->stopped = true;
                     }
 
                     if ($this->stopped) {

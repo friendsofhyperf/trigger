@@ -27,16 +27,27 @@ class HeartbeatSubscriber extends AbstractSubscriber
      */
     protected $concurrent;
 
+    /**
+     * @var null|BinLogCurrent
+     */
+    protected $binLogCurrent;
+
     public function __construct(PositionFactory $factory, string $replication = 'default')
     {
         $this->position = $factory->get($replication);
         $this->concurrent = new Concurrent(3);
+
+        defer(function () {
+            var_dump(__METHOD__, $this->binLogCurrent);
+        });
     }
 
     protected function allEvents(EventDTO $event): void
     {
-        $this->concurrent->create(function () use ($event) {
-            $this->position->set($event->getEventInfo()->getBinLogCurrent());
-        });
+        // $this->concurrent->create(function () use ($event) {
+        //     $this->position->set($event->getEventInfo()->getBinLogCurrent());
+        // });
+
+        $this->binLogCurrent = $event->getEventInfo()->getBinLogCurrent();
     }
 }

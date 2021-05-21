@@ -43,7 +43,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
             while (true) {
                 if ($this->binLogCurrent instanceof BinLogCurrent) {
                     $this->position->set($this->binLogCurrent);
-                    $this->logger->info(sprintf('[trigger.%s] BinLogCurrent ', $replication, json_encode($this->binLogCurrent->jsonSerialize())));
+                    $this->logger->info(sprintf('[trigger.%s] BinLogCurrent %s', $replication, json_encode($this->binLogCurrent->jsonSerialize())));
                 }
 
                 sleep(1);

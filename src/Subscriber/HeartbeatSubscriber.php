@@ -12,7 +12,9 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 
 use FriendsOfHyperf\Trigger\Position;
 use FriendsOfHyperf\Trigger\PositionFactory;
-use Hyperf\Utils\Coroutine\Concurrent;
+use Hyperf\Contract\StdoutLoggerInterface;
+use Hyperf\Utils\Coroutine;
+use MySQLReplication\BinLog\BinLogCurrent;
 use MySQLReplication\Event\DTO\EventDTO;
 
 class HeartbeatSubscriber extends AbstractSubscriber
@@ -23,31 +25,34 @@ class HeartbeatSubscriber extends AbstractSubscriber
     protected $position;
 
     /**
-     * @var Concurrent
-     */
-    protected $concurrent;
-
-    /**
      * @var null|BinLogCurrent
      */
     protected $binLogCurrent;
 
-    public function __construct(PositionFactory $factory, string $replication = 'default')
+    /**
+     * @var StdoutLoggerInterface
+     */
+    private $logger;
+
+    public function __construct(PositionFactory $factory, StdoutLoggerInterface $logger, string $replication = 'default')
     {
         $this->position = $factory->get($replication);
-        $this->concurrent = new Concurrent(3);
+        $this->logger = $logger;
 
-        defer(function () {
-            var_dump(__METHOD__, $this->binLogCurrent);
+        Coroutine::create(function () use ($replication) {
+            while (true) {
+                if ($this->binLogCurrent instanceof BinLogCurrent) {
+                    $this->position->set($this->binLogCurrent);
+                    $this->logger->info(sprintf('[trigger.%s] BinLogCurrent ', $replication, json_encode($this->binLogCurrent->jsonSerialize())));
+                }
+
+                sleep(1);
+            }
         });
     }
 
     protected function allEvents(EventDTO $event): void
     {
-        // $this->concurrent->create(function () use ($event) {
-        //     $this->position->set($event->getEventInfo()->getBinLogCurrent());
-        // });
-
         $this->binLogCurrent = $event->getEventInfo()->getBinLogCurrent();
     }
 }

@@ -30,7 +30,7 @@ class HeartbeatSubscriber extends AbstractSubscriber
     public function __construct(PositionFactory $factory, string $replication = 'default')
     {
         $this->position = $factory->get($replication);
-        $this->concurrent = new Concurrent(10);
+        $this->concurrent = new Concurrent(3);
     }
 
     protected function allEvents(EventDTO $event): void

@@ -27,15 +27,15 @@ class TriggerDispatcher implements EventDispatcherInterface
     /**
      * @var TriggerProvider
      */
-    protected $triggerProvider;
+    protected $provider;
 
-    public function __construct(TriggerProvider $provider, ContainerInterface $container)
+    public function __construct(ContainerInterface $container, TriggerProvider $provider, string $replication = 'default')
     {
-        $this->triggerProvider = $provider;
+        $this->provider = $provider;
 
         /** @var ConfigInterface $config */
         $config = $container->get(ConfigInterface::class);
-        $limit = $config->get('trigger.concurrent.limit');
+        $limit = $config->get(sprintf('trigger.%s.concurrent.limit', $replication));
 
         if ($limit && is_numeric($limit)) {
             $this->concurrent = new Concurrent((int) $limit);
@@ -47,7 +47,7 @@ class TriggerDispatcher implements EventDispatcherInterface
      */
     public function dispatch(object $event)
     {
-        foreach ($this->triggerProvider->getListenersForEvent($event) as $trigger) {
+        foreach ($this->provider->getListenersForEvent($event) as $trigger) {
             $eventType = $event->getType();
 
             foreach ($event->getValues() as $value) {

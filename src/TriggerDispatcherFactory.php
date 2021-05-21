@@ -15,24 +15,23 @@ class TriggerDispatcherFactory
     /**
      * @var TriggerProviderFactory
      */
-    protected $triggerProviderFactory;
+    protected $factory;
 
     /**
      * @var TriggerDispatcher[]
      */
-    protected $dispatchers = [];
+    protected $dispatchers;
 
     public function __construct(TriggerProviderFactory $factory)
     {
-        $this->triggerProviderFactory = $factory;
+        $this->factory = $factory;
     }
 
     public function get(string $replication = 'default'): TriggerDispatcher
     {
         if (! isset($this->dispatchers[$replication])) {
-            /** @var TriggerProvider $provider */
-            $provider = $this->triggerProviderFactory->get($replication);
-            $this->dispatchers[$replication] = make(TriggerDispatcher::class, ['provider' => $provider]);
+            $provider = $this->factory->get($replication);
+            $this->dispatchers[$replication] = make(TriggerDispatcher::class, compact('replication', 'provider'));
         }
 
         return $this->dispatchers[$replication];

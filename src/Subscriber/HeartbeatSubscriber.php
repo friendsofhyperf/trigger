@@ -16,6 +16,7 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use MySQLReplication\Event\DTO\EventDTO;
+use Swoole\Coroutine\System;
 
 class HeartbeatSubscriber extends AbstractSubscriber
 {
@@ -32,7 +33,12 @@ class HeartbeatSubscriber extends AbstractSubscriber
     /**
      * @var StdoutLoggerInterface
      */
-    private $logger;
+    protected $logger;
+
+    /**
+     * @var int
+     */
+    protected $interval = 1;
 
     public function __construct(PositionFactory $factory, StdoutLoggerInterface $logger, string $replication = 'default')
     {
@@ -44,17 +50,29 @@ class HeartbeatSubscriber extends AbstractSubscriber
 
             while (true) {
                 if ($this->binLogCurrent instanceof BinLogCurrent && $binLogPosition != $this->binLogCurrent->getBinLogPosition()) {
-                    // Update binLogCurrent to cache
                     $this->position->set($this->binLogCurrent);
-                    // Output
                     $this->logger->info(sprintf('[trigger.%s] BinLogCurrent: %s by %s', $replication, json_encode($this->binLogCurrent->jsonSerialize()), __CLASS__));
-                    // Update
                     $binLogPosition = $this->binLogCurrent->getBinLogPosition();
                 }
 
-                sleep(1);
+                sleep($this->interval);
             }
         });
+
+        foreach ([SIGTERM, SIGINT] as $signal) {
+            Coroutine::create(function () use ($signal, $replication) {
+                while (true) {
+                    $ret = System::waitSignal($signal, 5.0);
+
+                    if ($ret) {
+                        if ($this->binLogCurrent instanceof BinLogCurrent) {
+                            $this->position->set($this->binLogCurrent);
+                            $this->logger->info(sprintf('[trigger.%s] *BinLogCurrent: %s by %s', $replication, json_encode($this->binLogCurrent->jsonSerialize()), __CLASS__));
+                        }
+                    }
+                }
+            });
+        }
     }
 
     protected function allEvents(EventDTO $event): void

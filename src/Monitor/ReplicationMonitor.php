@@ -59,20 +59,20 @@ class ReplicationMonitor implements MonitorInterface
             $binLogCache = null;
             $position = $this->positionFactory->get($this->process->getReplication());
 
-            $this->debug('monitor start');
+            $this->debug('Monitor start');
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->debug('monitor stopped');
+                    $this->debug('Monitor stopped');
                     break;
                 }
 
-                $this->debug('monitor executing');
+                $this->debug('Monitor executing');
 
                 $binLogCurrent = $position->get();
 
                 if (! ($binLogCurrent instanceof BinLogCurrent)) {
-                    $this->debug('replication not run yet');
+                    $this->debug('Replication not run yet');
                     sleep($interval);
                     continue;
                 }
@@ -89,7 +89,7 @@ class ReplicationMonitor implements MonitorInterface
 
                 $binLogCache = $binLogCurrent;
 
-                $this->debug(sprintf('monitor executed, [binlogFileName:%s binlogPosition:%s]', $binLogCurrent->getBinFileName(), $binLogCurrent->getBinLogPosition()));
+                $this->debug(sprintf('Monitor executed, binLogCurrent: %s', json_encode($binLogCurrent->jsonSerialize())));
 
                 sleep($interval);
             }

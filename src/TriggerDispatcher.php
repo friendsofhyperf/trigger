@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Utils\Coroutine;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\RowsDTO;
@@ -72,7 +73,7 @@ class TriggerDispatcher implements EventDispatcherInterface
                 if ($this->concurrent) {
                     $this->concurrent->create($callback);
                 } else {
-                    co($callback);
+                    Coroutine::create($callback);
                 }
             }
         }

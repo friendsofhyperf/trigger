@@ -39,11 +39,6 @@ class HeartbeatSubscriber extends AbstractSubscriber
      */
     protected $interval = 1;
 
-    /**
-     * @var bool
-     */
-    protected $stopped = false;
-
     public function __construct(PositionFactory $factory, StdoutLoggerInterface $logger, string $replication = 'default')
     {
         $this->position = $factory->get($replication);
@@ -57,10 +52,6 @@ class HeartbeatSubscriber extends AbstractSubscriber
                     $this->position->set($this->binLogCurrent);
                     $this->logger->info(sprintf('[trigger.%s] BinLogCurrent: %s by %s', $replication, json_encode($this->binLogCurrent->jsonSerialize()), __CLASS__));
                     $binLogPosition = $this->binLogCurrent->getBinLogPosition();
-                }
-
-                if ($this->stopped) {
-                    break;
                 }
 
                 sleep($this->interval);

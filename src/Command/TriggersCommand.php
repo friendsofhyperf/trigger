@@ -22,7 +22,7 @@ use Symfony\Component\Console\Input\InputOption;
  */
 class TriggersCommand extends HyperfCommand
 {
-    protected $name = 'trigger:triggers';
+    protected $name = 'describe:triggers';
 
     public function __construct(ContainerInterface $container)
     {

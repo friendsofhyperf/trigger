@@ -24,7 +24,7 @@ use Symfony\Component\Console\Input\InputOption;
  */
 class SubscribersCommand extends HyperfCommand
 {
-    protected $name = 'trigger:subscribers';
+    protected $name = 'describe:subscribers';
 
     public function __construct(ContainerInterface $container)
     {

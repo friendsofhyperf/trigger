@@ -41,6 +41,9 @@ class TriggersCommand extends HyperfCommand
     {
         $triggers = AnnotationCollector::getClassesByAnnotation(Trigger::class);
         $rows = collect($triggers)
+            ->each(function ($property, $class) {
+                $property->table = $property->table ?? class_basename($class);
+            })
             ->filter(function ($property, $class) {
                 if ($this->input->getOption('replication')) {
                     return $this->input->getOption('replication') == $property->replication;

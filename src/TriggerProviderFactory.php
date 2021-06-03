@@ -71,11 +71,7 @@ class TriggerProviderFactory
                 continue;
             }
 
-            if (isset($property->table)) {
-                $table = $property->table;
-            } else {
-                $table = class_basename($class);
-            }
+            $table = $property->table ?? class_basename($class);
 
             foreach ($property->events ?? [] as $event) {
                 $method = 'on' . ucfirst(strtolower($event)); // onWrite/onUpdate/onDelete

@@ -14,7 +14,6 @@ use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use FriendsOfHyperf\Trigger\Trigger\AbstractTrigger;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
-use Hyperf\Utils\ApplicationContext;
 use Psr\Container\ContainerInterface;
 
 class TriggerProviderFactory
@@ -29,8 +28,14 @@ class TriggerProviderFactory
      */
     protected $logger;
 
+    /**
+     * @var ContainerInterface
+     */
+    protected $container;
+
     public function __construct(ContainerInterface $container)
     {
+        $this->container = $container;
         $this->logger = $container->get(StdoutLoggerInterface::class);
     }
 
@@ -40,31 +45,37 @@ class TriggerProviderFactory
     public function get(string $replication = 'default')
     {
         if (! isset($this->providers[$replication])) {
-            $this->providers[$replication] = tap(new TriggerProvider(), function ($provider) use ($replication) {
-                $this->registerAnnotations($provider, $replication, ApplicationContext::getContainer());
+            $this->providers[$replication] = tap(make(TriggerProvider::class), function ($provider) use ($replication) {
+                $this->registerAnnotations($provider, $replication);
             });
         }
 
         return $this->providers[$replication];
     }
 
-    private function registerAnnotations(TriggerProvider $provider, string $replication, ContainerInterface $container): void
+    private function registerAnnotations(TriggerProvider $provider, string $replication): void
     {
         $classes = AnnotationCollector::getClassesByAnnotation(Trigger::class);
 
         foreach ($classes as $class => $property) {
+            /** @var Trigger $property */
             if ($property->replication != $replication) {
                 continue;
             }
 
-            $instance = $container->get($class);
+            /** @var AbstractTrigger $instance */
+            $instance = $this->container->get($class);
 
             if (! ($instance instanceof AbstractTrigger)) {
-                $this->logger->warning(sprintf('%s doesnot instanceof %s.', $class, AbstractTrigger::class));
+                $this->logger->warning(sprintf('%s doesn\'t instanceof %s.', $class, AbstractTrigger::class));
                 continue;
             }
 
-            $table = $property->table;
+            if (isset($property->table)) {
+                $table = $property->table;
+            } else {
+                $table = class_basename($class);
+            }
 
             foreach ($property->events ?? [] as $event) {
                 $method = 'on' . ucfirst(strtolower($event)); // onWrite/onUpdate/onDelete

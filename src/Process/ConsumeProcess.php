@@ -80,11 +80,6 @@ class ConsumeProcess extends AbstractProcess
      */
     protected $positionFactory;
 
-    /**
-     * @var Position
-     */
-    protected $position;
-
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
@@ -147,7 +142,7 @@ class ConsumeProcess extends AbstractProcess
 
     public function getPosition(): Position
     {
-        return $this->position;
+        return $this->positionFactory->get($this->replication);
     }
 
     public function isMonitor(): bool

@@ -73,7 +73,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
     {
         $this->eventChan->push(func_get_args());
 
-        if (${$this}->monitorChan) {
+        if ($this->monitorChan) {
             $this->monitorChan->push(func_get_args());
         }
 

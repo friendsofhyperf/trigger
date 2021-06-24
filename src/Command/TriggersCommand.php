@@ -24,7 +24,7 @@ class TriggersCommand extends HyperfCommand
     /**
      * @var string
      */
-    protected $signature = 'describe:triggers {--replication|R= : Replication} {--table|T= : Table}';
+    protected $signature = 'describe:triggers {--R|replication= : Replication} {--T|table= : Table}';
 
     /**
      * @var string

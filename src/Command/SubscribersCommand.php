@@ -25,7 +25,7 @@ class SubscribersCommand extends HyperfCommand
     /**
      * @var string
      */
-    protected $signature = 'describe:subscribers {--replication|R= : Replication}';
+    protected $signature = 'describe:subscribers {--R|replication= : Replication}';
 
     /**
      * @var string

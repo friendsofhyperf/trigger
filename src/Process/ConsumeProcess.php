@@ -61,6 +61,11 @@ class ConsumeProcess extends AbstractProcess
     protected $mutexRetryInterval = 10;
 
     /**
+     * @var bool
+     */
+    protected $monitor = false;
+
+    /**
      * @var int
      */
     protected $monitorInterval = 10;
@@ -99,7 +104,7 @@ class ConsumeProcess extends AbstractProcess
     public function handle(): void
     {
         $callback = function () {
-            Coroutine::create(function () {
+            $this->isMonitor() && Coroutine::create(function () {
                 while (true) {
                     if ($this->isStopped()) {
                         $this->debug('Process stopped.');
@@ -143,6 +148,11 @@ class ConsumeProcess extends AbstractProcess
     public function getPosition(): Position
     {
         return $this->position;
+    }
+
+    public function isMonitor(): bool
+    {
+        return $this->monitor;
     }
 
     public function setStopped(bool $stopped): void

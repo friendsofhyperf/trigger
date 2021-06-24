@@ -24,9 +24,9 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
     protected $eventChan;
 
     /**
-     * @var Channel
+     * @var null|Channel
      */
-    protected $positionChan;
+    protected $monitorChan;
 
     /**
      * @var ConsumeProcess
@@ -39,7 +39,6 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
 
         $this->process = $process;
         $this->eventChan = new Channel(1000);
-        $this->positionChan = new Channel(1000);
 
         Coroutine::create(function () {
             while (true) {
@@ -52,24 +51,31 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
             }
         });
 
-        Coroutine::create(function () {
-            while (true) {
-                if ($this->process->isStopped()) {
-                    break;
-                }
+        if ($process->isMonitor()) {
+            $this->monitorChan = new Channel(1000);
 
-                [$event] = $this->positionChan->pop();
-                if ($event instanceof EventDTO) {
-                    $this->process->getPosition()->set($event->getEventInfo()->getBinLogCurrent());
+            Coroutine::create(function () {
+                while (true) {
+                    if ($this->process->isStopped()) {
+                        break;
+                    }
+
+                    [$event] = $this->monitorChan->pop();
+                    if ($event instanceof EventDTO) {
+                        $this->process->getPosition()->set($event->getEventInfo()->getBinLogCurrent());
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     public function dispatch(object $event, ?string $eventName = null): object
     {
         $this->eventChan->push(func_get_args());
-        $this->positionChan->push(func_get_args());
+
+        if (${$this}->monitorChan) {
+            $this->monitorChan->push(func_get_args());
+        }
 
         return $event;
     }

@@ -75,7 +75,9 @@ class TriggerSubscriber extends AbstractSubscriber
                 /** @var EventDTO $event */
                 $event = $this->chan->pop();
 
-                $this->consume($event);
+                if ($event instanceof EventDTO) {
+                    $this->consume($event);
+                }
             }
         });
     }

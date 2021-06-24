@@ -94,6 +94,11 @@ class ConsumeProcess extends AbstractProcess
         return $this->name;
     }
 
+    public function getReplication(): string
+    {
+        return $this->replication;
+    }
+
     public function setStopped(bool $stopped): void
     {
         $this->stopped = $stopped;

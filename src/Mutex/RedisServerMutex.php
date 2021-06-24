@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Mutex;
 
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
+use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
@@ -18,6 +19,8 @@ use Psr\Container\ContainerInterface;
 
 class RedisServerMutex implements ServerMutexInterface
 {
+    use Logger;
+
     /**
      * @var \Redis
      */
@@ -40,7 +43,6 @@ class RedisServerMutex implements ServerMutexInterface
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->process = $process;
-        $this->context = ['component' => $process->getName()];
     }
 
     public function attempt(callable $callback = null)
@@ -52,28 +54,28 @@ class RedisServerMutex implements ServerMutexInterface
 
         while (true) {
             if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $expires])) {
-                $this->logger->debug('Got mutex', $this->context);
+                $this->debug('Got mutex');
                 break;
             }
 
-            $this->logger->debug('Waiting mutex', $this->context);
+            $this->debug('Waiting mutex');
 
             sleep($retryInterval);
         }
 
         Coroutine::create(function () use ($name, $expires, $retryInterval) {
-            $this->logger->debug('Keepalive start');
+            $this->debug('Keepalive start');
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->logger->debug('Keepalive stopped', $this->context);
+                    $this->debug('Keepalive stopped');
                     break;
                 }
 
-                $this->logger->debug('Keepalive executing', $this->context);
+                $this->debug('Keepalive executing');
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
-                $this->logger->debug(sprintf('Keepalive executed [ttl=%s]', $ttl), $this->context);
+                $this->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
 
                 sleep($retryInterval);
             }
@@ -81,12 +83,12 @@ class RedisServerMutex implements ServerMutexInterface
 
         if ($callback) {
             try {
-                $this->logger->debug('Process running', $this->context);
+                $this->debug('Process running');
                 $callback();
             } finally {
-                $this->logger->debug('Process exited', $this->context);
+                $this->debug('Process exited');
                 $this->release();
-                $this->logger->debug('Mutex released', $this->context);
+                $this->debug('Mutex released');
             }
         }
     }

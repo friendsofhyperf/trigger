@@ -10,8 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use Hyperf\Utils\Coordinator\Constants;
-use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use Swoole\Coroutine\Channel;
 
@@ -29,8 +27,6 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
         $this->chan = new Channel(1000);
 
         Coroutine::create(function () {
-            CoordinatorManager::until(Constants::WORKER_START)->yield();
-
             while (true) {
                 [$event, $eventName] = $this->chan->pop();
                 parent::dispatch($event, $eventName);

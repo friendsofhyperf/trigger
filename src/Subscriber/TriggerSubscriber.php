@@ -13,8 +13,6 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\ChannelManager;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
-use Hyperf\Utils\Coordinator\Constants;
-use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
@@ -28,7 +26,7 @@ class TriggerSubscriber extends AbstractSubscriber
     /**
      * @var Channel
      */
-    protected $channel;
+    protected $chan;
 
     /**
      * @var TriggerManager
@@ -54,18 +52,16 @@ class TriggerSubscriber extends AbstractSubscriber
     {
         $this->replication = $replication;
         $this->config = $container->get(ConfigInterface::class);
-        $this->channel = $container->get(ChannelManager::class)->get($replication);
+        $this->chan = $container->get(ChannelManager::class)->get($replication);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->concurrent = new Concurrent(
             (int) $this->config->get(sprintf('trigger.%s.trigger.current', $replication), 1000)
         );
 
         Coroutine::create(function () {
-            CoordinatorManager::until(Constants::WORKER_START)->yield();
-
             while (true) {
                 /** @var EventDTO $event */
-                $event = $this->channel->pop();
+                $event = $this->chan->pop();
 
                 $this->consume($event);
             }
@@ -83,7 +79,7 @@ class TriggerSubscriber extends AbstractSubscriber
 
     protected function allEvents(EventDTO $event): void
     {
-        $this->channel->push($event);
+        $this->chan->push($event);
     }
 
     protected function consume(RowsDTO $event): void

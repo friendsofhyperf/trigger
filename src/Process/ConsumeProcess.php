@@ -76,9 +76,9 @@ class ConsumeProcess extends AbstractProcess
     protected $stopped = false;
 
     /**
-     * @var PositionFactory
+     * @var Position
      */
-    protected $positionFactory;
+    protected $position;
 
     public function __construct(ContainerInterface $container)
     {
@@ -87,7 +87,7 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
-        $this->positionFactory = $container->get(PositionFactory::class);
+        $this->position = $container->get(PositionFactory::class)->get($this->replication);
 
         if ($this->onOneServer) {
             $this->mutex = make(ServerMutexInterface::class, [
@@ -106,7 +106,7 @@ class ConsumeProcess extends AbstractProcess
                         break;
                     }
 
-                    $binLogCurrent = $this->positionFactory->get($this->replication)->get();
+                    $binLogCurrent = $this->position->get();
 
                     if ($binLogCurrent) {
                         $this->debug(sprintf('Monitor executed, binLogCurrent: %s', json_encode($binLogCurrent->jsonSerialize())));
@@ -142,7 +142,7 @@ class ConsumeProcess extends AbstractProcess
 
     public function getPosition(): Position
     {
-        return $this->positionFactory->get($this->replication);
+        return $this->position;
     }
 
     public function isMonitor(): bool

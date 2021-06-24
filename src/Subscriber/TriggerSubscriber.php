@@ -113,7 +113,7 @@ class TriggerSubscriber extends AbstractSubscriber
                     [$class, $method] = $callable;
 
                     if (! $this->container->has($class)) {
-                        $this->logger->warning(sprintf('%s cannot get instance from container.', $class));
+                        $this->logger->warning(sprintf('Entry "%s" cannot be resolved.', $class));
                         return;
                     }
 

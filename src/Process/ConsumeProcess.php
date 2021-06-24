@@ -50,6 +50,11 @@ class ConsumeProcess extends AbstractProcess
     protected $mutexExpires = 30;
 
     /**
+     * @var int
+     */
+    protected $mutexRetryInterval = 10;
+
+    /**
      * @var bool
      */
     private $stopped = false;
@@ -84,7 +89,7 @@ class ConsumeProcess extends AbstractProcess
         }
     }
 
-    public function setStopped(bool $stopped):void
+    public function setStopped(bool $stopped): void
     {
         $this->stopped = $stopped;
     }
@@ -94,14 +99,19 @@ class ConsumeProcess extends AbstractProcess
         return $this->stopped;
     }
 
-    public function getMutexName()
+    public function getMutexName(): string
     {
         return 'trigger:mutex:' . $this->replication;
     }
 
-    public function getMutexExpires()
+    public function getMutexExpires(): int
     {
         return (int) $this->mutexExpires;
+    }
+
+    public function getMutexRetryInterval()
+    {
+        return (int) $this->mutexRetryInterval;
     }
 
     public function getMutexOwner()

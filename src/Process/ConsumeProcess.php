@@ -50,6 +50,6 @@ class ConsumeProcess extends AbstractProcess
 
     public function handle(): void
     {
-        $this->replicationFactory->make($this->replication)->consume();
+        $this->replicationFactory->make($this->replication)->run();
     }
 }

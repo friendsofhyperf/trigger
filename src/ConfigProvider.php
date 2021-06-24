@@ -10,6 +10,9 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
+use FriendsOfHyperf\Trigger\Mutex\RedisServerMutex;
+use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
+
 class ConfigProvider
 {
     public function __invoke(): array
@@ -17,7 +20,9 @@ class ConfigProvider
         defined('BASE_PATH') or define('BASE_PATH', '');
 
         return [
-            'dependencies' => [],
+            'dependencies' => [
+                ServerMutexInterface::class => RedisServerMutex::class,
+            ],
             'annotations' => [
                 'scan' => [
                     'paths' => [

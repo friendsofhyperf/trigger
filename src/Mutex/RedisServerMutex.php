@@ -36,13 +36,17 @@ class RedisServerMutex implements ServerMutexInterface
      */
     protected $process;
 
-    protected $context = [];
+    /**
+     * @var string
+     */
+    private $replication;
 
     public function __construct(ContainerInterface $container, ConsumeProcess $process)
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->process = $process;
+        $this->replication = $process->getReplication();
     }
 
     public function attempt(callable $callback = null)
@@ -54,25 +58,25 @@ class RedisServerMutex implements ServerMutexInterface
 
         while (true) {
             if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $expires])) {
-                $this->debug('Got mutex');
+                $this->debug('Got mutex.');
                 break;
             }
 
-            $this->debug('Waiting mutex');
+            $this->debug('Waiting mutex.');
 
             sleep($retryInterval);
         }
 
         Coroutine::create(function () use ($name, $expires, $retryInterval) {
-            $this->debug('Keepalive start');
+            $this->debug('Keepalive start.');
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->debug('Keepalive stopped');
+                    $this->debug('Keepalive stopped.');
                     break;
                 }
 
-                $this->debug('Keepalive executing');
+                $this->debug('Keepalive executing.');
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
                 $this->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
@@ -83,12 +87,12 @@ class RedisServerMutex implements ServerMutexInterface
 
         if ($callback) {
             try {
-                $this->debug('Process running');
+                $this->debug('Process start.');
                 $callback();
             } finally {
-                $this->debug('Process exited');
+                $this->debug('Process stopped.');
                 $this->release();
-                $this->debug('Mutex released');
+                $this->debug('Mutex released.');
             }
         }
     }

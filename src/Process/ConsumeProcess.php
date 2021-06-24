@@ -94,7 +94,7 @@ class ConsumeProcess extends AbstractProcess
         $this->stopped = $stopped;
     }
 
-    public function getStopped(): bool
+    public function isStopped(): bool
     {
         return $this->stopped;
     }

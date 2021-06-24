@@ -11,18 +11,12 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Process;
 
 use FriendsOfHyperf\Trigger\ReplicationFactory;
-use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
 use Psr\Container\ContainerInterface;
 
 class ConsumeProcess extends AbstractProcess
 {
-    /**
-     * @var ConfigInterface
-     */
-    protected $config;
-
     /**
      * @var StdoutLoggerInterface
      */
@@ -43,7 +37,6 @@ class ConsumeProcess extends AbstractProcess
         parent::__construct($container);
 
         $this->name = 'trigger.' . $this->replication;
-        $this->config = $container->get(ConfigInterface::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
     }

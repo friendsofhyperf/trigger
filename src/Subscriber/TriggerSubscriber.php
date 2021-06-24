@@ -101,7 +101,7 @@ class TriggerSubscriber extends AbstractSubscriber
                             call($callable, [$value]);
                             break;
                         case ConstEventsNames::UPDATE:
-                            call($callable, [$value['new'], $value['old']]);
+                            call($callable, [$value['before'], $value['after']]);
                             break;
                         case ConstEventsNames::DELETE:
                             call($callable, [$value]);

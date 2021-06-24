@@ -55,7 +55,7 @@ class TriggerSubscriber extends AbstractSubscriber
         $this->replication = $replication;
         $this->config = $container->get(ConfigInterface::class);
         $this->channel = $container->get(ChannelManager::class)->get($replication);
-        $this->triggerManager = $container(TriggerManager::class);
+        $this->triggerManager = $container->get(TriggerManager::class);
         $this->concurrent = new Concurrent(
             (int) $this->config->get('trigger.' . $replication . '.trigger.current', 1000)
         );

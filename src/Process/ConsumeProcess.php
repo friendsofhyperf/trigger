@@ -168,12 +168,12 @@ class ConsumeProcess extends AbstractProcess
         return (int) $this->mutexExpires;
     }
 
-    public function getMutexRetryInterval()
+    public function getMutexRetryInterval(): int
     {
         return (int) $this->mutexRetryInterval;
     }
 
-    public function getMutexOwner()
+    public function getMutexOwner(): string
     {
         return Util::getInternalIp();
     }

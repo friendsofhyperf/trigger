@@ -13,6 +13,8 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\ChannelManager;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Utils\Coordinator\Constants;
+use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
@@ -59,6 +61,8 @@ class TriggerSubscriber extends AbstractSubscriber
         );
 
         Coroutine::create(function () {
+            CoordinatorManager::until(Constants::WORKER_START)->yield();
+
             while (true) {
                 /** @var EventDTO $event */
                 $event = $this->channel->pop();

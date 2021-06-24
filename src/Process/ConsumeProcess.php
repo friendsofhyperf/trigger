@@ -42,6 +42,7 @@ class ConsumeProcess extends AbstractProcess
     {
         parent::__construct($container);
 
+        $this->name = 'trigger.' . $this->replication;
         $this->config = $container->get(ConfigInterface::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);

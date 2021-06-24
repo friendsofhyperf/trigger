@@ -57,7 +57,7 @@ class TriggerSubscriber extends AbstractSubscriber
         $this->channel = $container->get(ChannelManager::class)->get($replication);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->concurrent = new Concurrent(
-            (int) $this->config->get('trigger.' . $replication . '.trigger.current', 1000)
+            (int) $this->config->get(sprintf('trigger.%s.trigger.current', $replication), 1000)
         );
 
         Coroutine::create(function () {

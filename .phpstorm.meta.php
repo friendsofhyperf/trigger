@@ -8,9 +8,9 @@ declare(strict_types=1);
  * @document https://github.com/friendsofhyperf/trigger/blob/main/README.md
  * @contact  huangdijia@gmail.com
  */
-namespace FriendsOfHyperf\Trigger\Monitor;
+namespace PHPSTORM_META;
 
-interface MonitorInterface
-{
-    public function run(callable $onReplicationStopped);
-}
+    // Reflect
+    override(\Psr\Container\ContainerInterface::get(0), map('@'));
+    override(\Hyperf\Utils\Context::get(0), map('@'));
+    override(\make(0), map('@'));

@@ -14,7 +14,7 @@
     "require-dev": {
         "hyperf/framework": "^2.1",
         "hyperf/redis": "^2.1",
-        "friendsofphp/php-cs-fixer": "^2.04",
+        "friendsofphp/php-cs-fixer": "^3.0",
         "swoole/ide-helper": "dev-master",
         "phpstan/phpstan": "^0.12"
     },

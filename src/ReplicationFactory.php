@@ -10,12 +10,12 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Exception\ConfigNotFoundException;
+use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use Hyperf\Contract\ConfigInterface;
+use Hyperf\Contract\StdoutLoggerInterface;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
 use Psr\Container\ContainerInterface;
-use RuntimeException;
 
 class ReplicationFactory
 {
@@ -25,61 +25,54 @@ class ReplicationFactory
     protected $config;
 
     /**
-     * @var MySQLReplicationFactory[]
+     * @var SubscriberManager
      */
-    protected $replications = [];
+    protected $subscriberManager;
 
     /**
-     * @var PositionFactory
+     * @var TriggerManager
      */
-    protected $positionFactory;
+    protected $triggerManager;
+
+    /**
+     * @var StdoutLoggerInterface
+     */
+    protected $logger;
 
     public function __construct(ContainerInterface $container)
     {
         $this->config = $container->get(ConfigInterface::class);
-        $this->positionFactory = $container->get(PositionFactory::class);
+        $this->subscriberManager = $container->get(SubscriberManager::class);
+        $this->triggerManager = $container->get(TriggerManager::class);
+        $this->logger = $container->get(StdoutLoggerInterface::class);
     }
 
-    /**
-     * @throws ConfigNotFoundException
-     * @return MySQLReplicationFactory
-     */
-    public function get(string $replication = 'default')
+    public function make(string $replication = 'default'): MySQLReplicationFactory
     {
-        if (! isset($this->replications[$replication])) {
-            $key = 'trigger.' . $replication;
+        // Get config of replication
+        $config = $this->config->get('trigger.' . $replication);
+        // Get databases of replication
+        $databasesOnly = array_merge(
+            $config['databases_only'] ?? [],
+            $this->triggerManager->getDatabases($replication)
+        );
+        // Get tables of replication
+        $tablesOnly = array_merge(
+            $config['tables_only'] ?? [],
+            $this->triggerManager->getTables($replication)
+        );
 
-            if (! $this->config->has($key)) {
-                throw new ConfigNotFoundException('config ' . $key . ' is not found.');
-            }
-
-            $config = $this->config->get($key);
-
-            if ($binLogCurrent = $this->positionFactory->get($replication)->get()) {
-                $config['binlog_filename'] = $binLogCurrent->getBinFileName();
-                $config['binlog_position'] = $binLogCurrent->getBinLogPosition();
-            }
-
-            $this->replications[$replication] = $this->make($config);
-        }
-
-        return $this->replications[$replication];
-    }
-
-    /**
-     * @throws RuntimeException
-     */
-    public function make(array $config = []): MySQLReplicationFactory
-    {
-        $configBuilder = new ConfigBuilder();
-        $configBuilder->withUser($config['user'] ?? 'root')
-            ->withHost($config['host'] ?? '127.0.0.1')
-            ->withPassword($config['password'] ?? 'root')
-            ->withPort((int) $config['port'] ?? 3306)
-            ->withSlaveId($this->generateSlaveId())
-            ->withHeartbeatPeriod((float) $config['heartbeat_period'] ?? 3)
-            ->withDatabasesOnly((array) $config['databases_only'] ?? [])
-            ->withtablesOnly((array) $config['tables_only'] ?? []);
+        /** @var ConfigBuilder */
+        $configBuilder = tap(new ConfigBuilder(), function ($builder) use ($config, $databasesOnly, $tablesOnly) {
+            $builder->withUser($config['user'] ?? 'root')
+                ->withHost($config['host'] ?? '127.0.0.1')
+                ->withPassword($config['password'] ?? 'root')
+                ->withPort((int) $config['port'] ?? 3306)
+                ->withSlaveId(rand(100, 999))
+                ->withHeartbeatPeriod((float) $config['heartbeat_period'] ?? 3)
+                ->withDatabasesOnly($databasesOnly)
+                ->withTablesOnly($tablesOnly);
+        });
 
         if (isset($config['binlog_filename'])) {
             $configBuilder->withBinLogFileName($config['binlog_filename']);
@@ -89,14 +82,14 @@ class ReplicationFactory
             $configBuilder->withBinLogPosition((int) $config['binlog_position']);
         }
 
-        return new MySQLReplicationFactory($configBuilder->build());
-    }
+        return tap(new MySQLReplicationFactory($configBuilder->build()), function ($factory) use ($replication) {
+            /** @var MySQLReplicationFactory $factory */
+            $subscribers = $this->subscriberManager->get($replication);
+            $subscribers[] = TriggerSubscriber::class;
 
-    /**
-     * @throws RuntimeException
-     */
-    protected function generateSlaveId(): int
-    {
-        return (int) ip2long(Util::getInternalIp()) + rand(0, 999);
+            foreach ($subscribers as $subscriber) {
+                $factory->registerSubscriber(make($subscriber, ['replication' => $replication]));
+            }
+        });
     }
 }

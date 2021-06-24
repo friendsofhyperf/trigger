@@ -10,7 +10,9 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Annotation;
 
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AbstractAnnotation;
+use Hyperf\Utils\ApplicationContext;
 
 /**
  * @Annotation
@@ -18,51 +20,42 @@ use Hyperf\Di\Annotation\AbstractAnnotation;
  */
 class Trigger extends AbstractAnnotation
 {
-    /**
-     * @var string
-     */
-    public $replication = 'default';
+    public string $replication = 'default';
 
-    /**
-     * @var array
-     */
-    public $events = [];
+    public string $database;
 
-    /**
-     * @var string
-     */
-    public $table;
+    public string $table;
 
-    /**
-     * @var int
-     */
-    public $priority = 0;
+    public array $events = [];
+
+    public int $priority = 0;
 
     public function __construct($value = null)
     {
         if (isset($value['on'])) {
-            if ($value['on'] == '*') {
-                $value['on'] = ['write', 'update', 'delete'];
+            $events = $value['on'];
+
+            if ($events == '*') {
+                $events = ['write', 'update', 'delete'];
             }
 
-            if (is_string($value['on']) && stripos($value['on'], ',')) {
-                $value['on'] = explode(',', $value['on']);
-                $value['on'] = array_map(function ($item) { return trim($item); }, $value['on']);
+            if (is_string($events) && stripos($events, ',')) {
+                $events = explode(',', $events);
+                $events = array_map(function ($item) {
+                    return trim($item);
+                }, $events);
             }
 
-            $this->events = (array) $value['on'];
+            $value['events'] = (array) $events;
         }
 
-        if (isset($value['replication']) && is_string($value['replication'])) {
-            $this->replication = $value['replication'];
+        if (! isset($value['database'])) {
+            /** @var ConfigInterface */
+            $config = ApplicationContext::getContainer()->get(ConfigInterface::class);
+            $key = sprintf('trigger.%s.databases_only');
+            $value['database'] = $config->get($key)[0] ?? '';
         }
 
-        if (isset($value['table']) && is_string($value['table'])) {
-            $this->table = $value['table'];
-        }
-
-        if (isset($value['priority']) && is_numeric($value['priority'])) {
-            $this->priority = $value['priority'];
-        }
+        parent::__construct($value);
     }
 }

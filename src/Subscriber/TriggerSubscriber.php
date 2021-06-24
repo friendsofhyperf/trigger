@@ -116,19 +116,21 @@ class TriggerSubscriber extends AbstractSubscriber
                         return;
                     }
 
-                    $instance = $this->container->get($class);
-
                     switch ($eventType) {
                         case ConstEventsNames::WRITE:
-                            call([$instance, $method], [$value]);
+                            $args = [$value, []];
                             break;
                         case ConstEventsNames::UPDATE:
-                            call([$instance, $method], [$value['before'], $value['after']]);
+                            $args = [$value['before'], $value['after']];
                             break;
                         case ConstEventsNames::DELETE:
-                            call([$instance, $method], [$value]);
+                            $args = [[], $value];
                             break;
+                        default:
+                            return;
                     }
+
+                    call([$this->container->get($class), $method], $args);
                 });
             }
         }

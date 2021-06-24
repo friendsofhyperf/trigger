@@ -33,11 +33,14 @@ class RedisServerMutex implements ServerMutexInterface
      */
     protected $process;
 
+    protected $context = [];
+
     public function __construct(ContainerInterface $container, ConsumeProcess $process)
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->process = $process;
+        $this->context = ['component' => $process->getName()];
     }
 
     public function attempt(callable $callback = null)
@@ -49,11 +52,11 @@ class RedisServerMutex implements ServerMutexInterface
 
         while (true) {
             if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $expires])) {
-                $this->logger->debug('Got mutex');
+                $this->logger->debug('Got mutex', $this->context);
                 break;
             }
 
-            $this->logger->debug('Waiting mutex');
+            $this->logger->debug('Waiting mutex', $this->context);
 
             sleep($retryInterval);
         }
@@ -63,14 +66,14 @@ class RedisServerMutex implements ServerMutexInterface
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->logger->debug('Keepalive stopped');
+                    $this->logger->debug('Keepalive stopped', $this->context);
                     break;
                 }
 
-                $this->logger->debug('Keepalive executing');
+                $this->logger->debug('Keepalive executing', $this->context);
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
-                $this->logger->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
+                $this->logger->debug(sprintf('Keepalive executed [ttl=%s]', $ttl), $this->context);
 
                 sleep($retryInterval);
             }
@@ -78,12 +81,12 @@ class RedisServerMutex implements ServerMutexInterface
 
         if ($callback) {
             try {
-                $this->logger->debug('Process running');
+                $this->logger->debug('Process running', $this->context);
                 $callback();
             } finally {
-                $this->logger->debug('Process exited');
+                $this->logger->debug('Process exited', $this->context);
                 $this->release();
-                $this->logger->debug('Mutex released');
+                $this->logger->debug('Mutex released', $this->context);
             }
         }
     }

@@ -89,6 +89,11 @@ class ConsumeProcess extends AbstractProcess
         }
     }
 
+    public function getName(): string
+    {
+        return $this->name;
+    }
+
     public function setStopped(bool $stopped): void
     {
         $this->stopped = $stopped;

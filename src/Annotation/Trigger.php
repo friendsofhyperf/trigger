@@ -10,9 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Annotation;
 
-use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AbstractAnnotation;
-use Hyperf\Utils\ApplicationContext;
 
 /**
  * @Annotation
@@ -47,13 +45,6 @@ class Trigger extends AbstractAnnotation
             }
 
             $value['events'] = (array) $events;
-        }
-
-        if (! isset($value['database'])) {
-            /** @var ConfigInterface */
-            $config = ApplicationContext::getContainer()->get(ConfigInterface::class);
-            $key = sprintf('trigger.%s.databases_only');
-            $value['database'] = $config->get($key)[0] ?? '';
         }
 
         parent::__construct($value);

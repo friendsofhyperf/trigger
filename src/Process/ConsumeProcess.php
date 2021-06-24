@@ -109,7 +109,7 @@ class ConsumeProcess extends AbstractProcess
                     $binLogCurrent = $this->position->get();
 
                     if ($binLogCurrent) {
-                        $this->debug(sprintf('Monitor executed, binLogCurrent: %s', json_encode($binLogCurrent->jsonSerialize())));
+                        $this->debug(sprintf('Monitoring, binLogCurrent: %s', json_encode($binLogCurrent->jsonSerialize())));
                     } else {
                         $this->debug('Process not run yet.');
                     }

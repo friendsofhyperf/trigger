@@ -10,32 +10,29 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Listener;
 
-use Hyperf\Event\Annotation\Listener;
-use Psr\Container\ContainerInterface;
-use FriendsOfHyperf\Trigger\TriggerManager;
-use Hyperf\Framework\Event\BootApplication;
-use Hyperf\Event\Contract\ListenerInterface;
 use FriendsOfHyperf\Trigger\SubscriberManager;
+use FriendsOfHyperf\Trigger\TriggerManager;
+use Hyperf\Event\Annotation\Listener;
+use Hyperf\Event\Contract\ListenerInterface;
+use Hyperf\Framework\Event\BootApplication;
+use Psr\Container\ContainerInterface;
 
 /**
  * @Listener
- * @package FriendsOfHyperf\Trigger\Listener
  */
 class RegisterTriggerListener implements ListenerInterface
 {
     /**
-     * 
      * @var SubscriberManager
      */
     private $subscriberManager;
 
     /**
-     * 
      * @var TriggerManager
      */
     private $triggerManager;
 
-    public function __construct(ContainerInterface $container, )
+    public function __construct(ContainerInterface $container)
     {
         $this->subscriberManager = $container->get(SubscriberManager::class);
         $this->triggerManager = $container->get(TriggerManager::class);
@@ -48,6 +45,9 @@ class RegisterTriggerListener implements ListenerInterface
         ];
     }
 
+    /**
+     * @param BootApplication $event
+     */
     public function process(object $event)
     {
         $this->subscriberManager->register();

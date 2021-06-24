@@ -49,6 +49,11 @@ class ConsumeProcess extends AbstractProcess
      */
     protected $mutexExpires = 30;
 
+    /**
+     * @var bool
+     */
+    private $stopped = false;
+
     public function __construct(ContainerInterface $container)
     {
         parent::__construct($container);
@@ -59,9 +64,7 @@ class ConsumeProcess extends AbstractProcess
 
         if ($this->onOneServer) {
             $this->mutex = make(ServerMutexInterface::class, [
-                'name' => (string) $this->name,
-                'seconds' => (int) $this->mutexExpires,
-                'owner' => (string) Util::getInternalIp(),
+                'process' => $this,
             ]);
         }
     }
@@ -79,5 +82,30 @@ class ConsumeProcess extends AbstractProcess
         } else {
             $callback();
         }
+    }
+
+    public function setStopped(bool $stopped)
+    {
+        $this->stopped = $stopped;
+    }
+
+    public function getStopped(): bool
+    {
+        return $this->stopped;
+    }
+
+    public function getMutexName()
+    {
+        return $this->name;
+    }
+
+    public function getMutexExpires()
+    {
+        return $this->mutexExpires;
+    }
+
+    public function getMutexOwner()
+    {
+        return Util::getInternalIp();
     }
 }

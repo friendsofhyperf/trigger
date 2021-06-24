@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Mutex;
 
+use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
@@ -28,37 +29,25 @@ class RedisServerMutex implements ServerMutexInterface
     protected $logger;
 
     /**
-     * @var string
+     * @var ConsumeProcess
      */
-    protected $name;
+    protected $process;
 
-    /**
-     * @var int
-     */
-    protected $seconds;
-
-    /**
-     * @var string
-     */
-    protected $owner;
-
-    public function __construct(ContainerInterface $container, string $name, int $seconds = 30, ?string $owner = null)
+    public function __construct(ContainerInterface $container, ConsumeProcess $process)
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->name = $name;
-        $this->seconds = $seconds;
-        $this->owner = $owner ?? uniqid();
+        $this->process = $process;
     }
 
     public function attempt(callable $callback = null)
     {
-        $name = $this->name;
-        $seconds = $this->seconds;
-        $owner = $this->owner;
+        $name = $this->process->getMutexName();
+        $expires = $this->process->getMutexExpires();
+        $owner = $this->process->getMutexOwner();
 
         while (true) {
-            if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $seconds])) {
+            if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $expires])) {
                 $this->logger->debug('Got mutex');
                 break;
             }
@@ -68,7 +57,7 @@ class RedisServerMutex implements ServerMutexInterface
             sleep(5);
         }
 
-        Coroutine::create(function () use ($name, $seconds) {
+        Coroutine::create(function () use ($name, $expires) {
             $this->logger->debug('Keepalive start');
 
             while (true) {
@@ -78,7 +67,7 @@ class RedisServerMutex implements ServerMutexInterface
                 }
 
                 $this->logger->debug('Keepalive executing');
-                $this->redis->expire($name, $seconds);
+                $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
                 $this->logger->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
 

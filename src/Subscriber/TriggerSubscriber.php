@@ -10,7 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use FriendsOfHyperf\Trigger\ChannelManager;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -64,9 +63,9 @@ class TriggerSubscriber extends AbstractSubscriber
         $this->replication = $replication;
         $this->container = $container;
         $this->config = $container->get(ConfigInterface::class);
-        $this->chan = $container->get(ChannelManager::class)->get($replication);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
+        $this->chan = new Channel(1000);
         $this->concurrent = new Concurrent(
             (int) $this->config->get(sprintf('trigger.%s.trigger.current', $replication), 1000)
         );

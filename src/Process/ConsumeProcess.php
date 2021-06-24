@@ -84,7 +84,7 @@ class ConsumeProcess extends AbstractProcess
         }
     }
 
-    public function setStopped(bool $stopped)
+    public function setStopped(bool $stopped):void
     {
         $this->stopped = $stopped;
     }
@@ -96,12 +96,12 @@ class ConsumeProcess extends AbstractProcess
 
     public function getMutexName()
     {
-        return $this->name;
+        return 'trigger:mutex:' . $this->replication;
     }
 
     public function getMutexExpires()
     {
-        return $this->mutexExpires;
+        return (int) $this->mutexExpires;
     }
 
     public function getMutexOwner()

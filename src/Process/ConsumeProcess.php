@@ -11,14 +11,20 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Process;
 
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
+use FriendsOfHyperf\Trigger\Position\Position;
+use FriendsOfHyperf\Trigger\Position\PositionFactory;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
+use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Utils\Coroutine;
 use Psr\Container\ContainerInterface;
 
 class ConsumeProcess extends AbstractProcess
 {
+    use Logger;
+
     /**
      * @var StdoutLoggerInterface
      */
@@ -55,9 +61,24 @@ class ConsumeProcess extends AbstractProcess
     protected $mutexRetryInterval = 10;
 
     /**
+     * @var int
+     */
+    protected $monitorInterval = 10;
+
+    /**
      * @var bool
      */
-    private $stopped = false;
+    protected $stopped = false;
+
+    /**
+     * @var PositionFactory
+     */
+    protected $positionFactory;
+
+    /**
+     * @var Position
+     */
+    protected $position;
 
     public function __construct(ContainerInterface $container)
     {
@@ -66,6 +87,7 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
+        $this->positionFactory = $container->get(PositionFactory::class);
 
         if ($this->onOneServer) {
             $this->mutex = make(ServerMutexInterface::class, [
@@ -77,8 +99,27 @@ class ConsumeProcess extends AbstractProcess
     public function handle(): void
     {
         $callback = function () {
+            Coroutine::create(function () {
+                while (true) {
+                    if ($this->isStopped()) {
+                        $this->debug('Process stopped.');
+                        break;
+                    }
+
+                    $binLogCurrent = $this->positionFactory->get($this->replication)->get();
+
+                    if ($binLogCurrent) {
+                        $this->debug(sprintf('Monitor executed, binLogCurrent: %s', json_encode($binLogCurrent->jsonSerialize())));
+                    } else {
+                        $this->debug('Process not run yet.');
+                    }
+
+                    sleep($this->monitorInterval ?? 10);
+                }
+            });
+
             $this->replicationFactory
-                ->make($this->replication)
+                ->make($this)
                 ->run();
         };
 
@@ -97,6 +138,11 @@ class ConsumeProcess extends AbstractProcess
     public function getReplication(): string
     {
         return $this->replication;
+    }
+
+    public function getPosition(): Position
+    {
+        return $this->position;
     }
 
     public function setStopped(bool $stopped): void

@@ -10,6 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
+use FriendsOfHyperf\Trigger\Position\PositionFactory;
+use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -39,16 +41,24 @@ class ReplicationFactory
      */
     protected $logger;
 
-    public function __construct(ContainerInterface $container)
+    /**
+     * @var PositionFactory
+     */
+    protected $positionFactory;
+
+    public function __construct(ContainerInterface $container, $positionFactory)
     {
         $this->config = $container->get(ConfigInterface::class);
         $this->subscriberManager = $container->get(SubscriberManager::class);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
+        $this->positionFactory = $container->get(PositionFactory::class);
     }
 
-    public function make(string $replication = 'default'): MySQLReplicationFactory
+    public function make(ConsumeProcess $process): MySQLReplicationFactory
     {
+        $replication = $process->getReplication();
+
         // Get config of replication
         $config = $this->config->get('trigger.' . $replication);
         // Get databases of replication
@@ -84,7 +94,9 @@ class ReplicationFactory
 
         return tap(make(MySQLReplicationFactory::class, [
             'config' => $configBuilder->build(),
-            'eventDispatcher' => make(EventDispatcher::class),
+            'eventDispatcher' => make(EventDispatcher::class, [
+                'process' => $process,
+            ]),
         ]), function ($factory) use ($replication) {
             /** @var MySQLReplicationFactory $factory */
             $subscribers = $this->subscriberManager->get($replication);

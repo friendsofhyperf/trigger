@@ -46,7 +46,7 @@ class ReplicationFactory
      */
     protected $positionFactory;
 
-    public function __construct(ContainerInterface $container, $positionFactory)
+    public function __construct(ContainerInterface $container)
     {
         $this->config = $container->get(ConfigInterface::class);
         $this->subscriberManager = $container->get(SubscriberManager::class);

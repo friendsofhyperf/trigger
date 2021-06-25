@@ -11,7 +11,7 @@ MySQL trigger component for hyperf, Based on a great work of creators：[krowins
 - Request
 
 ```bash
-composer require "friendsofhyperf/trigger:~0.3.0"
+composer require "friendsofhyperf/trigger"
 ```
 
 - Publish

@@ -17,6 +17,8 @@
     "php-cs-fixer.formatHtml": true,
     "php-cs-fixer.documentFormattingProvider": true,
     "cSpell.words": [
-        "binlog"
+        "binlog",
+        "friendsofhyperf",
+        "krowinski"
     ],
 }

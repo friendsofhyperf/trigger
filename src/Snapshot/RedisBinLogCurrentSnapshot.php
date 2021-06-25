@@ -40,7 +40,7 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
     public function get(): ?BinLogCurrent
     {
         return with($this->redis->get($this->key()), function ($data) {
-            $data = unserialize($data);
+            $data = unserialize((string) $data);
 
             if (! ($data instanceof BinLogCurrent)) {
                 return null;

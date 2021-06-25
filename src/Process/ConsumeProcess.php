@@ -81,7 +81,7 @@ class ConsumeProcess extends AbstractProcess
     protected $binLogCurrent;
 
     /**
-     * @var null|BinLogCurrentSnapshotInterface
+     * @var BinLogCurrentSnapshotInterface
      */
     protected $binLogSnapshot;
 
@@ -174,6 +174,11 @@ class ConsumeProcess extends AbstractProcess
     public function getReplication(): string
     {
         return $this->replication;
+    }
+
+    public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
+    {
+        return $this->binLogSnapshot;
     }
 
     public function setBinLogCurrent(BinLogCurrent $binLogCurrent): void

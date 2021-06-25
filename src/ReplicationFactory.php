@@ -12,6 +12,7 @@ namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
+use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use MySQLReplication\Config\ConfigBuilder;
@@ -20,6 +21,8 @@ use Psr\Container\ContainerInterface;
 
 class ReplicationFactory
 {
+    use Logger;
+
     /**
      * @var ConfigInterface
      */
@@ -77,12 +80,11 @@ class ReplicationFactory
                 ->withTablesOnly($tablesOnly);
         });
 
-        if (isset($config['binlog_filename'])) {
-            $configBuilder->withBinLogFileName($config['binlog_filename']);
-        }
+        if ($binLogCurrent = $process->getBinLogCurrentSnapshot()->get()) {
+            $configBuilder->withBinLogFileName($binLogCurrent->getBinFileName());
+            $configBuilder->withBinLogPosition((int) $binLogCurrent->getBinLogPosition());
 
-        if (isset($config['binlog_position'])) {
-            $configBuilder->withBinLogPosition((int) $config['binlog_position']);
+            $this->debug('Continue with position', $binLogCurrent->jsonSerialize());
         }
 
         $eventDispatcher = make(EventDispatcher::class, [

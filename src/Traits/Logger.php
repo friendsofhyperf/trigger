@@ -15,15 +15,33 @@ use Hyperf\Utils\ApplicationContext;
 
 trait Logger
 {
-    public function debug(string $message, array $context = []): void
+    protected function info(string $message, array $context = []): void
     {
-        /** @var StdoutLoggerInterface */
-        $logger = $this->logger ?? ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
-        $logger->info(sprintf(
+        $this->getLogger()->info($this->messageFormat($message, $context));
+    }
+
+    protected function debug(string $message, array $context = []): void
+    {
+        $this->getLogger()->debug($this->messageFormat($message, $context));
+    }
+
+    protected function warn(string $message, array $context = []): void
+    {
+        $this->getLogger()->warning($this->messageFormat($message, $context));
+    }
+
+    protected function messageFormat(string $message, array $context = []): string
+    {
+        return sprintf(
             '[trigger%s] %s %s',
             isset($this->replication) ? ".{$this->replication}" : '',
             $message,
             $context ? json_encode($context, JSON_UNESCAPED_UNICODE) : ''
-        ));
+        );
+    }
+
+    protected function getLogger(): StdoutLoggerInterface
+    {
+        return property_exists($this, 'logger') ? $this->logger : ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
     }
 }

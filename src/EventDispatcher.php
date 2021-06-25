@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
+use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\Event\DTO\EventDTO;
 use Psr\Container\ContainerInterface;
@@ -18,6 +19,8 @@ use Swoole\Coroutine\Channel;
 
 class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
 {
+    use Logger;
+
     /**
      * @var Channel
      */
@@ -43,6 +46,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
         Coroutine::create(function () {
             while (true) {
                 if ($this->process->isStopped()) {
+                    $this->warn('Process stopped.');
                     break;
                 }
 
@@ -57,6 +61,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
             Coroutine::create(function () {
                 while (true) {
                     if ($this->process->isStopped()) {
+                        $this->warn('Process stopped.');
                         break;
                     }
 

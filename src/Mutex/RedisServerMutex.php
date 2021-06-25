@@ -62,29 +62,29 @@ class RedisServerMutex implements ServerMutexInterface
                 $this->redis->set($name, $owner, ['NX', 'EX' => $expires])
                 || $this->redis->get($name) == $owner
             ) {
-                $this->debug('Got mutex.');
+                $this->info('Got mutex.');
                 break;
             }
 
-            $this->debug('Waiting mutex.');
+            $this->info('Waiting mutex.');
 
             sleep($retryInterval);
         }
 
         Coroutine::create(function () use ($name, $owner, $expires, $retryInterval) {
-            $this->debug('Keepalive start.');
+            $this->info('Keepalive start.');
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->debug('Keepalive stopped.');
+                    $this->info('Keepalive stopped.');
                     break;
                 }
 
-                $this->debug('Keepalive executing.');
+                $this->info('Keepalive executing.');
                 $this->redis->setNx($name, $owner);
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
-                $this->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));
+                $this->info(sprintf('Keepalive executed [ttl=%s]', $ttl));
 
                 sleep($retryInterval);
             }
@@ -92,14 +92,14 @@ class RedisServerMutex implements ServerMutexInterface
 
         if ($callback) {
             try {
-                $this->debug('Process start.');
+                $this->info('Process start.');
                 $callback();
             } catch (Throwable $e) {
-                $this->debug($e->getMessage(), [$e->getFile() . ':' . $e->getLine()]);
+                $this->info($e->getMessage(), [$e->getFile() . ':' . $e->getLine()]);
             } finally {
-                $this->debug('Process stopped.');
+                $this->info('Process stopped.');
                 $this->release();
-                $this->debug('Mutex released.');
+                $this->info('Mutex released.');
             }
         }
     }

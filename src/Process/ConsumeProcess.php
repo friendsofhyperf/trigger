@@ -116,14 +116,14 @@ class ConsumeProcess extends AbstractProcess
                 Coroutine::create(function () {
                     while (true) {
                         if ($this->isStopped()) {
-                            $this->debug('Process stopped.');
+                            $this->warn('Process stopped.');
                             break;
                         }
 
                         if ($this->binLogCurrent) {
-                            $this->debug(sprintf('Monitoring, binLogCurrent: %s', json_encode($this->binLogCurrent->jsonSerialize())));
+                            $this->info(sprintf('Monitoring, binLogCurrent: %s', json_encode($this->binLogCurrent->jsonSerialize())));
                         } else {
-                            $this->debug('Process not run yet.');
+                            $this->warn('Process not run yet.');
                         }
 
                         sleep($this->monitorInterval ?? 10);
@@ -134,7 +134,7 @@ class ConsumeProcess extends AbstractProcess
                 Coroutine::create(function () {
                     while (true) {
                         if ($this->isStopped()) {
-                            $this->debug('Process stopped.');
+                            $this->warn('Process stopped.');
                             break;
                         }
 
@@ -228,6 +228,6 @@ class ConsumeProcess extends AbstractProcess
 
     protected function onReplicationStopped(): void
     {
-        $this->debug('Replication stopped.');
+        $this->warn('Replication stopped.');
     }
 }

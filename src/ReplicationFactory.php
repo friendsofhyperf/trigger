@@ -84,7 +84,7 @@ class ReplicationFactory
             $configBuilder->withBinLogFileName($binLogCurrent->getBinFileName());
             $configBuilder->withBinLogPosition((int) $binLogCurrent->getBinLogPosition());
 
-            $this->debug('Continue with position', $binLogCurrent->jsonSerialize());
+            $this->info('Continue with position', $binLogCurrent->jsonSerialize());
         }
 
         $eventDispatcher = make(EventDispatcher::class, [

@@ -68,7 +68,7 @@ class RedisServerMutex implements ServerMutexInterface
             sleep($retryInterval);
         }
 
-        Coroutine::create(function () use ($name, $expires, $retryInterval) {
+        Coroutine::create(function () use ($name, $owner, $expires, $retryInterval) {
             $this->debug('Keepalive start.');
 
             while (true) {
@@ -78,6 +78,7 @@ class RedisServerMutex implements ServerMutexInterface
                 }
 
                 $this->debug('Keepalive executing.');
+                $this->redis->setNx($name, $owner);
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
                 $this->debug(sprintf('Keepalive executed [ttl=%s]', $ttl));

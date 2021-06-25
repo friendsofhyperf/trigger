@@ -85,11 +85,13 @@ class ReplicationFactory
             $configBuilder->withBinLogPosition((int) $config['binlog_position']);
         }
 
+        $eventDispatcher = make(EventDispatcher::class, [
+            'process' => $process,
+        ]);
+
         return tap(make(MySQLReplicationFactory::class, [
             'config' => $configBuilder->build(),
-            'eventDispatcher' => make(EventDispatcher::class, [
-                'process' => $process,
-            ]),
+            'eventDispatcher' => $eventDispatcher,
         ]), function ($factory) use ($replication) {
             /** @var MySQLReplicationFactory $factory */
             $subscribers = $this->subscriberManager->get($replication);

@@ -17,7 +17,7 @@ use Psr\SimpleCache\CacheInterface;
 
 class Position
 {
-    const CACHE_TTL = 3600;
+    public const CACHE_TTL = 3600;
 
     /**
      * @var CacheInterface

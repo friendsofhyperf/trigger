@@ -68,7 +68,7 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var int
      */
-    protected $monitorInterval = 10;
+    protected $monitorInterval = 30;
 
     /**
      * @var bool
@@ -83,7 +83,7 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var BinLogCurrentSnapshotInterface
      */
-    protected $binLogSnapshot;
+    protected $binLogCurrentSnapshot;
 
     /**
      * @var int
@@ -97,7 +97,7 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
-        $this->binLogSnapshot = make(BinLogCurrentSnapshotInterface::class, [
+        $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
             'replication' => $this->replication,
         ]);
 
@@ -140,13 +140,13 @@ class ConsumeProcess extends AbstractProcess
 
                         if ($this->binLogCurrent instanceof BinLogCurrent) {
                             if (
-                                $this->binLogSnapshot->get() instanceof BinLogCurrent
-                                && $this->binLogSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                                $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
+                                && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
                             ) {
                                 $this->onReplicationStopped();
                             }
 
-                            $this->binLogSnapshot->set($this->binLogCurrent);
+                            $this->binLogCurrentSnapshot->set($this->binLogCurrent);
                         }
 
                         sleep($this->snapShortInterval);
@@ -178,7 +178,7 @@ class ConsumeProcess extends AbstractProcess
 
     public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
     {
-        return $this->binLogSnapshot;
+        return $this->binLogCurrentSnapshot;
     }
 
     public function setBinLogCurrent(BinLogCurrent $binLogCurrent): void

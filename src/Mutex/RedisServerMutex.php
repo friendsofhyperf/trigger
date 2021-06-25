@@ -80,7 +80,6 @@ class RedisServerMutex implements ServerMutexInterface
                     break;
                 }
 
-                $this->info('Keepalive executing.');
                 $this->redis->setNx($name, $owner);
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);

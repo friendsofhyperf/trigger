@@ -62,7 +62,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
 
                     [$event] = $this->monitorChan->pop();
                     if ($event instanceof EventDTO) {
-                        $this->process->getPosition()->set($event->getEventInfo()->getBinLogCurrent());
+                        $this->process->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
                     }
                 }
             });

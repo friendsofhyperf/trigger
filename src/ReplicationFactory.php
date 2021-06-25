@@ -10,7 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Position\PositionFactory;
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use Hyperf\Contract\ConfigInterface;
@@ -41,18 +40,12 @@ class ReplicationFactory
      */
     protected $logger;
 
-    /**
-     * @var PositionFactory
-     */
-    protected $positionFactory;
-
     public function __construct(ContainerInterface $container)
     {
         $this->config = $container->get(ConfigInterface::class);
         $this->subscriberManager = $container->get(SubscriberManager::class);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->positionFactory = $container->get(PositionFactory::class);
     }
 
     public function make(ConsumeProcess $process): MySQLReplicationFactory

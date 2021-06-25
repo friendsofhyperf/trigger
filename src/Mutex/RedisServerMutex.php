@@ -58,7 +58,10 @@ class RedisServerMutex implements ServerMutexInterface
         $retryInterval = $this->process->getMutexRetryInterval();
 
         while (true) {
-            if ((bool) $this->redis->set($name, $owner, ['NX', 'EX' => $expires])) {
+            if (
+                $this->redis->set($name, $owner, ['NX', 'EX' => $expires])
+                || $this->redis->get($name) == $owner
+            ) {
                 $this->debug('Got mutex.');
                 break;
             }

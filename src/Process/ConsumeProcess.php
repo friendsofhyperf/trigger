@@ -138,18 +138,16 @@ class ConsumeProcess extends AbstractProcess
                             break;
                         }
 
-                        if (! ($this->binLogCurrent instanceof BinLogCurrent)) {
-                            continue;
-                        }
+                        if ($this->binLogCurrent instanceof BinLogCurrent) {
+                            if (
+                                $this->binLogSnapshot->get() instanceof BinLogCurrent
+                                && $this->binLogSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                            ) {
+                                $this->onReplicationStopped();
+                            }
 
-                        if (
-                            $this->binLogSnapshot->get() instanceof BinLogCurrent
-                            && $this->binLogSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
-                        ) {
-                            $this->onReplicationStopped();
+                            $this->binLogSnapshot->set($this->binLogCurrent);
                         }
-
-                        $this->binLogSnapshot->set($this->binLogCurrent);
 
                         sleep($this->snapShortInterval);
                     }

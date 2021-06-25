@@ -3,6 +3,7 @@
     "description": "MySQL Trigger for hyperf.",
     "type": "library",
     "require": {
+        "php": ">=7.3",
         "hyperf/command": "^2.1",
         "hyperf/di": "^2.1",
         "hyperf/event": "^2.1",

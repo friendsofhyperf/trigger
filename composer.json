@@ -9,8 +9,7 @@
         "hyperf/event": "^2.1",
         "hyperf/process": "^2.1",
         "hyperf/utils": "^2.1",
-        "krowinski/php-mysql-replication": "^7.0",
-        "psr/event-dispatcher": "^1.0"
+        "krowinski/php-mysql-replication": "^7.0"
     },
     "require-dev": {
         "hyperf/framework": "^2.1",

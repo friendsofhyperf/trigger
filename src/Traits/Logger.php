@@ -42,6 +42,6 @@ trait Logger
 
     protected function getLogger(): StdoutLoggerInterface
     {
-        return property_exists($this, 'logger') ? $this->logger : ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
+        return isset($this->logger) ? $this->logger : ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
     }
 }

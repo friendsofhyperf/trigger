@@ -54,7 +54,8 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
     {
         return join(':', [
             'trigger',
-            'bin_log_current_snap_shot',
+            'bin_log_current',
+            'snapshot',
             $this->replication,
         ]);
     }

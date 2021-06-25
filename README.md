@@ -20,7 +20,7 @@ composer require "friendsofhyperf/trigger"
 php bin/hyperf.php vendor:publish friendsofhyperf/trigger
 ```
 
-## Costom Trigger
+## Define a trigger
 
 ```php
 namespace App\Trigger;
@@ -58,7 +58,7 @@ class SomeTableTrigger extends AbstractTrigger
 }
 ```
 
-## Custom Subscriber
+## Define a subscriber
 
 ```php
 namespace App\Subscriber;

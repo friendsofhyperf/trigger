@@ -83,7 +83,7 @@ class RedisServerMutex implements ServerMutexInterface
                 $this->redis->setNx($name, $owner);
                 $this->redis->expire($name, $expires);
                 $ttl = $this->redis->ttl($name);
-                $this->info(sprintf('Keepalive executed [ttl=%s]', $ttl));
+                $this->info('Keepalive executed', ['ttl' => $ttl]);
 
                 sleep($retryInterval);
             }
@@ -94,7 +94,7 @@ class RedisServerMutex implements ServerMutexInterface
                 $this->info('Process start.');
                 $callback();
             } catch (Throwable $e) {
-                $this->info($e->getMessage(), [$e->getFile() . ':' . $e->getLine()]);
+                $this->info($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             } finally {
                 $this->info('Process stopped.');
                 $this->release();

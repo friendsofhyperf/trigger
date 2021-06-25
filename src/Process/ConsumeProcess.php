@@ -12,6 +12,7 @@ namespace FriendsOfHyperf\Trigger\Process;
 
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
+use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -80,9 +81,9 @@ class ConsumeProcess extends AbstractProcess
     protected $binLogCurrent;
 
     /**
-     * @var null|BinLogCurrent
+     * @var null|BinLogCurrentSnapshotInterface
      */
-    protected $binLogSnapShoot;
+    protected $binLogSnapshot;
 
     /**
      * @var int
@@ -96,6 +97,9 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
+        $this->binLogSnapshot = make(BinLogCurrentSnapshotInterface::class, [
+            'replication' => $this->replication,
+        ]);
 
         if ($this->onOneServer) {
             $this->mutex = make(ServerMutexInterface::class, [
@@ -139,13 +143,13 @@ class ConsumeProcess extends AbstractProcess
                         }
 
                         if (
-                            $this->binLogSnapShoot instanceof BinLogCurrent
-                            && $this->binLogSnapShoot->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                            $this->binLogSnapshot->get() instanceof BinLogCurrent
+                            && $this->binLogSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
                         ) {
                             $this->onReplicationStopped();
                         }
 
-                        $this->binLogSnapShoot = $this->binLogCurrent;
+                        $this->binLogSnapshot->set($this->binLogCurrent);
 
                         sleep($this->snapShortInterval);
                     }

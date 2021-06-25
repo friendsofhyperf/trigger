@@ -12,6 +12,8 @@ namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Mutex\RedisServerMutex;
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
+use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
+use FriendsOfHyperf\Trigger\Snapshot\RedisBinLogCurrentSnapshot;
 
 class ConfigProvider
 {
@@ -22,6 +24,7 @@ class ConfigProvider
         return [
             'dependencies' => [
                 ServerMutexInterface::class => RedisServerMutex::class,
+                BinLogCurrentSnapshotInterface::class => RedisBinLogCurrentSnapshot::class,
             ],
             'annotations' => [
                 'scan' => [

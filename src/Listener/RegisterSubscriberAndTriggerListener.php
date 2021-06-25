@@ -20,7 +20,7 @@ use Psr\Container\ContainerInterface;
 /**
  * @Listener
  */
-class RegisterTriggerListener implements ListenerInterface
+class RegisterSubscriberAndTriggerListener implements ListenerInterface
 {
     /**
      * @var SubscriberManager

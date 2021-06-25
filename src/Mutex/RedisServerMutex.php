@@ -16,6 +16,7 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
 use Psr\Container\ContainerInterface;
+use Throwable;
 
 class RedisServerMutex implements ServerMutexInterface
 {
@@ -89,6 +90,8 @@ class RedisServerMutex implements ServerMutexInterface
             try {
                 $this->debug('Process start.');
                 $callback();
+            } catch (Throwable $e) {
+                $this->debug($e->getMessage(), [$e->getFile() . ':' . $e->getLine()]);
             } finally {
                 $this->debug('Process stopped.');
                 $this->release();

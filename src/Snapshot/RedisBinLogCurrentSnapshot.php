@@ -34,18 +34,28 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 
     public function set(BinLogCurrent $binLogCurrent): void
     {
-        $this->redis->set($this->key(), $binLogCurrent);
+        $this->redis->set($this->key(), $this->serialize($binLogCurrent));
     }
 
     public function get(): ?BinLogCurrent
     {
-        $snapshot = $this->redis->get($this->key());
+        $snapshot = $this->serialize((string) $this->redis->get($this->key()));
 
         if ($snapshot instanceof BinLogCurrent) {
             return $snapshot;
         }
 
         return null;
+    }
+
+    public function serialize($value): string
+    {
+        return serialize($value);
+    }
+
+    public function unserialize(string $data)
+    {
+        return unserialize($data);
     }
 
     private function key()

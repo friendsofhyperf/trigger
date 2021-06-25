@@ -228,5 +228,6 @@ class ConsumeProcess extends AbstractProcess
 
     protected function onReplicationStopped(): void
     {
+        $this->debug('Replication stopped.');
     }
 }

@@ -10,9 +10,9 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Snapshot;
 
+use Hyperf\Redis\Redis;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
-use Psr\SimpleCache\CacheInterface;
 
 class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 {
@@ -22,30 +22,32 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
     private $replication;
 
     /**
-     * @var CacheInterface
+     * @var \Redis
      */
-    private $cache;
+    private $redis;
 
     public function __construct(ContainerInterface $container, $replication = 'default')
     {
         $this->replication = $replication;
-        $this->cache = $container->get(CacheInterface::class);
+        $this->redis = $container->get(Redis::class);
     }
 
     public function set(BinLogCurrent $binLogCurrent): void
     {
-        $this->cache->set($this->key(), $binLogCurrent);
+        $this->redis->set($this->key(), serialize($binLogCurrent));
     }
 
     public function get(): ?BinLogCurrent
     {
-        $snapshot = $this->cache->get($this->key());
+        return with($this->redis->get($this->key()), function ($data) {
+            $data = unserialize($data);
 
-        if ($snapshot instanceof BinLogCurrent) {
-            return $snapshot;
-        }
+            if (! ($data instanceof BinLogCurrent)) {
+                return null;
+            }
 
-        return null;
+            return $data;
+        });
     }
 
     private function key()

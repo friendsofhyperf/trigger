@@ -119,13 +119,13 @@ class TriggerSubscriber extends AbstractSubscriber
 
                     switch ($eventType) {
                         case ConstEventsNames::WRITE:
-                            $args = [$value, []];
+                            $args = [$value];
                             break;
                         case ConstEventsNames::UPDATE:
                             $args = [$value['before'], $value['after']];
                             break;
                         case ConstEventsNames::DELETE:
-                            $args = [[], $value];
+                            $args = [$value];
                             break;
                         default:
                             return;

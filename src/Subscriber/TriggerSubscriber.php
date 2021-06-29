@@ -10,6 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
+use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
+use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -23,6 +25,8 @@ use Swoole\Coroutine\Channel;
 
 class TriggerSubscriber extends AbstractSubscriber
 {
+    use Logger;
+
     /**
      * @var Channel
      */
@@ -58,20 +62,32 @@ class TriggerSubscriber extends AbstractSubscriber
      */
     protected $logger;
 
-    public function __construct(ContainerInterface $container, string $replication = 'default')
+    /**
+     * @var ConsumeProcess
+     */
+    protected $process;
+
+    public function __construct(ContainerInterface $container, ConsumeProcess $process)
     {
-        $this->replication = $replication;
         $this->container = $container;
+        $this->process = $process;
+        $this->replication = $process->getReplication();
         $this->config = $container->get(ConfigInterface::class);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->chan = new Channel(1000);
+
         $this->concurrent = new Concurrent(
-            (int) $this->config->get(sprintf('trigger.%s.trigger.current', $replication), 1000)
+            (int) $this->config->get(sprintf('trigger.%s.trigger.current', $this->replication), 1000)
         );
 
         Coroutine::create(function () {
             while (true) {
+                if ($this->process->isStopped()) {
+                    $this->warn('Process stopped.');
+                    break;
+                }
+
                 /** @var EventDTO $event */
                 $event = $this->chan->pop();
 

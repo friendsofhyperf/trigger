@@ -94,13 +94,13 @@ class ReplicationFactory
         return tap(make(MySQLReplicationFactory::class, [
             'config' => $configBuilder->build(),
             'eventDispatcher' => $eventDispatcher,
-        ]), function ($factory) use ($replication) {
+        ]), function ($factory) use ($replication, $process) {
             /** @var MySQLReplicationFactory $factory */
             $subscribers = $this->subscriberManager->get($replication);
             $subscribers[] = TriggerSubscriber::class;
 
             foreach ($subscribers as $subscriber) {
-                $factory->registerSubscriber(make($subscriber, ['replication' => $replication]));
+                $factory->registerSubscriber(make($subscriber, ['process' => $process]));
             }
         });
     }

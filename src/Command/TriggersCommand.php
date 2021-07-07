@@ -19,6 +19,7 @@ use Psr\Container\ContainerInterface;
 /**
  * @Command
  */
+#[Command]
 class TriggersCommand extends HyperfCommand
 {
     /**

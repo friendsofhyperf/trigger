@@ -20,6 +20,7 @@ use Psr\Container\ContainerInterface;
 /**
  * @Command
  */
+#[Command]
 class SubscribersCommand extends HyperfCommand
 {
     /**

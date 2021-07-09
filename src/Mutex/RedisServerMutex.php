@@ -14,6 +14,8 @@ use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
+use Hyperf\Utils\Coordinator\Constants;
+use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use Psr\Container\ContainerInterface;
 use Throwable;
@@ -72,7 +74,9 @@ class RedisServerMutex implements ServerMutexInterface
         }
 
         Coroutine::create(function () use ($name, $owner, $expires, $retryInterval) {
-            $this->info('Keepalive start.');
+            $this->info('@Keepalive waiting for all workers.');
+            CoordinatorManager::until(Constants::WORKER_START)->yield();
+            $this->info('@Keepalive booting after all workers started.');
 
             while (true) {
                 if ($this->process->isStopped()) {

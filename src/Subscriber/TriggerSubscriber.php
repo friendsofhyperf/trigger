@@ -81,23 +81,23 @@ class TriggerSubscriber extends AbstractSubscriber
             (int) $this->config->get(sprintf('trigger.%s.trigger.current', $this->replication), 1000)
         );
 
-        Coroutine::create(function () {
-            $this->info('@TriggerSubscriber booting.');
+        // Coroutine::create(function () {
+        //     $this->info('@TriggerSubscriber booting.');
 
-            while (true) {
-                if ($this->process->isStopped()) {
-                    $this->warn('Process stopped.');
-                    break;
-                }
+        //     while (true) {
+        //         if ($this->process->isStopped()) {
+        //             $this->warn('Process stopped.');
+        //             break;
+        //         }
 
-                /** @var EventDTO $event */
-                $event = $this->chan->pop();
+        //         /** @var EventDTO $event */
+        //         $event = $this->chan->pop();
 
-                if ($event instanceof EventDTO) {
-                    $this->consume($event);
-                }
-            }
-        });
+        //         if ($event instanceof EventDTO) {
+        //             $this->consume($event);
+        //         }
+        //     }
+        // });
     }
 
     public static function getSubscribedEvents(): array
@@ -111,7 +111,8 @@ class TriggerSubscriber extends AbstractSubscriber
 
     protected function allEvents(EventDTO $event): void
     {
-        $this->chan->push($event);
+        // $this->chan->push($event);
+        $this->consume($event);
     }
 
     protected function consume(RowsDTO $event): void

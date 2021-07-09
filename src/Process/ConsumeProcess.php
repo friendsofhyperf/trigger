@@ -17,6 +17,8 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Utils\Coordinator\Constants;
+use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
@@ -114,6 +116,10 @@ class ConsumeProcess extends AbstractProcess
             if ($this->isMonitor()) {
                 // Refresh binLogCurrent
                 Coroutine::create(function () {
+                    $this->info('@BinLogCurrent renewer waiting for all workers');
+                    CoordinatorManager::until(Constants::WORKER_START)->yield();
+                    $this->info('@BinLogCurrent renewer booting after all workers started.');
+
                     while (true) {
                         if ($this->isStopped()) {
                             $this->warn('Process stopped.');
@@ -132,6 +138,10 @@ class ConsumeProcess extends AbstractProcess
 
                 // Health check and set snapshot
                 Coroutine::create(function () {
+                    $this->info('@Health checker waiting for all workers');
+                    CoordinatorManager::until(Constants::WORKER_START)->yield();
+                    $this->info('@Health checker booting after all workers started.');
+
                     while (true) {
                         if ($this->isStopped()) {
                             $this->warn('Process stopped.');

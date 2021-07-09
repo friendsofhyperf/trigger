@@ -72,6 +72,8 @@ class RedisServerMutex implements ServerMutexInterface
         }
 
         Coroutine::create(function () use ($name, $owner, $expires, $retryInterval) {
+            $this->process->getCoordinator()->yield();
+
             $this->info('@Keepalive booting.');
 
             while (true) {

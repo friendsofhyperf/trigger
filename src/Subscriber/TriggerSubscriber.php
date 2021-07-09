@@ -82,6 +82,8 @@ class TriggerSubscriber extends AbstractSubscriber
         );
 
         Coroutine::create(function () {
+            $this->process->getCoordinator()->yield();
+
             $this->info('@TriggerSubscriber booting.');
 
             while (true) {

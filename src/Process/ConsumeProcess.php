@@ -17,9 +17,13 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Utils\Coordinator\Coordinator;
+use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
+use RuntimeException;
+use Swoole\Timer;
 
 class ConsumeProcess extends AbstractProcess
 {
@@ -114,6 +118,8 @@ class ConsumeProcess extends AbstractProcess
             if ($this->isMonitor()) {
                 // Refresh binLogCurrent
                 Coroutine::create(function () {
+                    $this->getCoordinator()->yield();
+
                     $this->info('@BinLogCurrent renewer booting.');
 
                     while (true) {
@@ -134,6 +140,8 @@ class ConsumeProcess extends AbstractProcess
 
                 // Health check and set snapshot
                 Coroutine::create(function () {
+                    $this->getCoordinator()->yield();
+
                     $this->info('@Health checker booting.');
 
                     while (true) {
@@ -158,9 +166,16 @@ class ConsumeProcess extends AbstractProcess
                 });
             }
 
-            $this->replicationFactory
-                ->make($this)
-                ->run();
+            $timerId = Timer::after(3000, fn () => $this->getCoordinator()->resume());
+
+            try {
+                $this->replicationFactory
+                    ->make($this)
+                    ->run();
+            } finally {
+                Timer::clear($timerId);
+                $this->stopped = true;
+            }
         };
 
         if ($this->mutex) {
@@ -178,6 +193,14 @@ class ConsumeProcess extends AbstractProcess
     public function getReplication(): string
     {
         return $this->replication;
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    public function getCoordinator(): Coordinator
+    {
+        return CoordinatorManager::until($this->getName());
     }
 
     public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface

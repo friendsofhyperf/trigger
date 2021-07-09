@@ -15,8 +15,6 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
-use Hyperf\Utils\Coordinator\Constants;
-use Hyperf\Utils\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Coroutine;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
@@ -84,9 +82,7 @@ class TriggerSubscriber extends AbstractSubscriber
         );
 
         Coroutine::create(function () {
-            $this->info('@TriggerSubscriber waiting for all workers.');
-            CoordinatorManager::until(Constants::WORKER_START)->yield();
-            $this->info('@TriggerSubscriber booting after all workers started.');
+            $this->info('@TriggerSubscriber booting.');
 
             while (true) {
                 if ($this->process->isStopped()) {

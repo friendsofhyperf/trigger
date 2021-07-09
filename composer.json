@@ -4,18 +4,18 @@
     "type": "library",
     "require": {
         "php": ">=7.3",
-        "hyperf/command": "^2.1",
-        "hyperf/di": "^2.1",
-        "hyperf/event": "^2.1",
-        "hyperf/process": "^2.1",
-        "hyperf/utils": "^2.1",
+        "hyperf/command": "~2.1.0",
+        "hyperf/di": "~2.1.0",
+        "hyperf/event": "~2.1.0",
+        "hyperf/process": "~2.1.0",
+        "hyperf/utils": "~2.1.0",
         "krowinski/php-mysql-replication": "^7.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
-        "hyperf/framework": "^2.1",
-        "hyperf/redis": "^2.1",
-        "hyperf/signal": "^2.1",
+        "hyperf/framework": "~2.1.0",
+        "hyperf/redis": "~2.1.0",
+        "hyperf/signal": "~2.1.0",
         "phpstan/phpstan": "^0.12",
         "swoole/ide-helper": "dev-master"
     },

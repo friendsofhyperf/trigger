@@ -154,9 +154,15 @@ class ConsumeProcess extends AbstractProcess
                 });
             }
 
-            $this->replicationFactory
-                ->make($this)
-                ->run();
+            $replication = $this->replicationFactory->make($this);
+
+            while (1) {
+                if ($this->isStopped()) {
+                    break;
+                }
+
+                $replication->consume();
+            }
         };
 
         if ($this->mutex) {

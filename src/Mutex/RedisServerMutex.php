@@ -97,15 +97,17 @@ class RedisServerMutex implements ServerMutexInterface
                 $this->info($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
             } finally {
                 $this->info('Process stopped.');
+                $this->process->setStopped(true);
                 $this->release();
                 $this->info('Mutex released.');
             }
         }
     }
 
-    public function release()
+    public function release(bool $force = false)
     {
-        $this->process->setStopped(true);
-        $this->redis->del($this->process->getMutexName());
+        if ($force || $this->redis->get($this->process->getMutexName()) == $this->process->getMutexOwner()) {
+            $this->redis->del($this->process->getMutexName());
+        }
     }
 }

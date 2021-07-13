@@ -14,5 +14,5 @@ interface ServerMutexInterface
 {
     public function attempt();
 
-    public function release();
+    public function release(bool $force = false);
 }

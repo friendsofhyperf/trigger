@@ -205,6 +205,10 @@ class ConsumeProcess extends AbstractProcess
     public function setStopped(bool $stopped): void
     {
         $this->stopped = $stopped;
+
+        if ($this->mutex) {
+            $this->mutex->release();
+        }
     }
 
     public function isStopped(): bool

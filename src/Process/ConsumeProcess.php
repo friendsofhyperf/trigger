@@ -169,12 +169,18 @@ class ConsumeProcess extends AbstractProcess
             $timerId = Timer::after(3000, fn () => $this->getCoordinator()->resume());
 
             try {
-                $this->replicationFactory
-                    ->make($this)
-                    ->run();
+                $replication = $this->replicationFactory->make($this);
+
+                while (1) {
+                    if ($this->isStopped()) {
+                        break;
+                    }
+
+                    $replication->consume();
+                }
             } finally {
                 Timer::clear($timerId);
-                $this->stopped = true;
+                $this->setStopped(true);
             }
         };
 

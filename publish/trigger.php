@@ -19,7 +19,7 @@ return [
         'heartbeat_period' => (int) env('TRIGGER_HEARTBEAT', 3),
 
         'trigger' => [
-            'concurrent' => 64,
+            'concurrent' => 1000,
         ],
     ],
 ];

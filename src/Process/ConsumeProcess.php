@@ -86,6 +86,11 @@ class ConsumeProcess extends AbstractProcess
     protected $healthMonitorInterval = 30;
 
     /**
+     * @var BinLogCurrentSnapshotInterface
+     */
+    protected $binLogCurrentSnapshot;
+
+    /**
      * @var int
      */
     protected $snapShortInterval = 10;
@@ -102,6 +107,9 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
+        $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
+            'replication' => $this->replication,
+        ]);
 
         if ($this->onOneServer) {
             $this->serverMutex = make(ServerMutexInterface::class, [
@@ -116,6 +124,7 @@ class ConsumeProcess extends AbstractProcess
         if ($this->monitor) {
             $this->healthMonitor = make(HealthMonitor::class, [
                 'process' => $this,
+                'binLogCurrentSnapshot' => $this->binLogCurrentSnapshot,
                 'monitorInterval' => $this->healthMonitorInterval ?? 10,
                 'snapShortInterval' => $this->snapShortInterval ?? 10,
             ]);
@@ -194,6 +203,14 @@ class ConsumeProcess extends AbstractProcess
     public function getHealthMonitor()
     {
         return $this->healthMonitor;
+    }
+
+    /**
+     * @return BinLogCurrentSnapshotInterface
+     */
+    public function getBinLogCurrentSnapshot()
+    {
+        return $this->binLogCurrentSnapshot;
     }
 
     public function stop(): void

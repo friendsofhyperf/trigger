@@ -45,14 +45,12 @@ class HealthMonitor
      */
     private $binLogCurrent;
 
-    public function __construct(ConsumeProcess $process, int $monitorInterval = 10, int $snapShortInterval = 10)
+    public function __construct(ConsumeProcess $process, BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, int $monitorInterval = 10, int $snapShortInterval = 10)
     {
         $this->process = $process;
         $this->monitorInterval = $monitorInterval;
         $this->snapShortInterval = $snapShortInterval;
-        $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
-            'replication' => $this->process->getReplication(),
-        ]);
+        $this->binLogCurrentSnapshot = $binLogCurrentSnapshot;
     }
 
     public function process()

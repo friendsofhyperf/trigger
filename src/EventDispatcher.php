@@ -11,75 +11,37 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
-use FriendsOfHyperf\Trigger\Traits\Logger;
-use Hyperf\Utils\Coroutine;
-use MySQLReplication\Event\DTO\EventDTO;
-use Swoole\Coroutine\Channel;
+use Hyperf\Utils\Coroutine\Concurrent;
 
 class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
 {
-    use Logger;
-
-    /**
-     * @var Channel
-     */
-    protected $eventChan;
-
-    /**
-     * @var null|Channel
-     */
-    protected $monitorChan;
-
     /**
      * @var ConsumeProcess
      */
     protected $process;
+
+    /**
+     * @var Concurrent
+     */
+    protected $concurrent;
 
     public function __construct(ConsumeProcess $process = null)
     {
         parent::__construct();
 
         $this->process = $process;
-        $this->eventChan = new Channel(1000);
-
-        Coroutine::create(function () {
-            while (1) {
-                if ($this->process->isStopped()) {
-                    $this->warn('Process stopped.');
-                    break;
-                }
-
-                [$event, $eventName] = $this->eventChan->pop();
-                parent::dispatch($event, $eventName);
-            }
-        });
-
-        if ($healthMonitor = $process->getHealthMonitor()) {
-            $this->monitorChan = new Channel(1000);
-
-            Coroutine::create(function () use ($healthMonitor) {
-                while (1) {
-                    if ($this->process->isStopped()) {
-                        $this->warn('Process stopped.');
-                        break;
-                    }
-
-                    [$event] = $this->monitorChan->pop();
-                    if ($event instanceof EventDTO) {
-                        $healthMonitor->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
-                    }
-                }
-            });
-        }
+        $this->concurrent = new Concurrent(1000);
     }
 
     public function dispatch(object $event, ?string $eventName = null): object
     {
-        $this->eventChan->push(func_get_args());
+        $this->concurrent->create(function () use ($event, $eventName) {
+            parent::dispatch($event, $eventName);
+        });
 
-        if ($this->monitorChan) {
-            $this->monitorChan->push(func_get_args());
-        }
+        $this->concurrent->create(function () use ($event) {
+            $this->process->getHealthMonitor()->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
+        });
 
         return $event;
     }

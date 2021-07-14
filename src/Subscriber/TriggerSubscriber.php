@@ -15,22 +15,15 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
-use Hyperf\Utils\Coroutine;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\EventDTO;
 use MySQLReplication\Event\DTO\RowsDTO;
 use Psr\Container\ContainerInterface;
-use Swoole\Coroutine\Channel;
 
 class TriggerSubscriber extends AbstractSubscriber
 {
     use Logger;
-
-    /**
-     * @var Channel
-     */
-    protected $chan;
 
     /**
      * @var TriggerManager
@@ -62,44 +55,16 @@ class TriggerSubscriber extends AbstractSubscriber
      */
     protected $logger;
 
-    /**
-     * @var ConsumeProcess
-     */
-    protected $process;
-
     public function __construct(ContainerInterface $container, ConsumeProcess $process)
     {
         $this->container = $container;
-        $this->process = $process;
         $this->replication = $process->getReplication();
         $this->config = $container->get(ConfigInterface::class);
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->chan = new Channel(1000);
-
         $this->concurrent = new Concurrent(
             (int) $this->config->get(sprintf('trigger.%s.trigger.current', $this->replication), 1000)
         );
-
-        Coroutine::create(function () {
-            $this->process->getCoordinator()->yield();
-
-            $this->info('TriggerSubscriber booted.');
-
-            while (true) {
-                if ($this->process->isStopped()) {
-                    $this->warn('Process stopped.');
-                    break;
-                }
-
-                /** @var EventDTO $event */
-                $event = $this->chan->pop();
-
-                if ($event instanceof EventDTO) {
-                    $this->consume($event);
-                }
-            }
-        });
     }
 
     public static function getSubscribedEvents(): array
@@ -113,11 +78,10 @@ class TriggerSubscriber extends AbstractSubscriber
 
     protected function allEvents(EventDTO $event): void
     {
-        $this->chan->push($event);
-    }
+        if (! $event instanceof RowsDTO) {
+            return;
+        }
 
-    protected function consume(RowsDTO $event): void
-    {
         $key = join('.', [
             $this->replication,
             $event->getTableMap()->getDatabase(),

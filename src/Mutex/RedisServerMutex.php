@@ -50,21 +50,27 @@ class RedisServerMutex implements ServerMutexInterface
     /**
      * @var mixed
      */
-    private $interval;
+    private $keepaliveInterval;
+
+    /**
+     * @var int
+     */
+    private $retryInterval;
 
     /**
      * @var bool
      */
     private $released = false;
 
-    public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $interval = 10)
+    public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $keepaliveInterval = 10, int $retryInterval = 10)
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->name = $name;
         $this->expires = $expires;
         $this->owner = $owner ?? Util::getInternalIp();
-        $this->interval = $interval;
+        $this->keepaliveInterval = $keepaliveInterval;
+        $this->retryInterval = $retryInterval;
     }
 
     public function attempt(callable $callback = null)
@@ -80,7 +86,7 @@ class RedisServerMutex implements ServerMutexInterface
 
             $this->info('Waiting server mutex.');
 
-            sleep($this->interval);
+            sleep($this->retryInterval);
         }
 
         Coroutine::create(function () {
@@ -97,7 +103,7 @@ class RedisServerMutex implements ServerMutexInterface
                 $ttl = $this->redis->ttl($this->name);
                 $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
 
-                sleep($this->interval);
+                sleep($this->keepaliveInterval);
             }
         });
 

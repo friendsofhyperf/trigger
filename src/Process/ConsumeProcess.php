@@ -63,7 +63,12 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var int
      */
-    protected $serverMutexInterval = 10;
+    protected $serverMutexKeepaliveInterval = 10;
+
+    /**
+     * @var int
+     */
+    protected $serverMutexRetryInterval = 10;
 
     /**
      * @var bool
@@ -103,7 +108,8 @@ class ConsumeProcess extends AbstractProcess
                 'name' => 'trigger:mutex:' . $this->replication,
                 'expires' => $this->serverMutexExpires ?? 60,
                 'owner' => Util::getInternalIp(),
-                'interval' => $this->serverMutexInterval ?? 10,
+                'retryInterval' => $this->serverMutexRetryInterval ?? 10,
+                'keepaliveInterval' => $this->serverMutexKeepaliveInterval ?? 10,
             ]);
         }
 

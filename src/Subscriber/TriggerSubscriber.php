@@ -63,7 +63,7 @@ class TriggerSubscriber extends AbstractSubscriber
         $this->triggerManager = $container->get(TriggerManager::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->concurrent = new Concurrent(
-            (int) $this->config->get(sprintf('trigger.%s.trigger.current', $this->replication), 1000)
+            (int) $this->config->get(sprintf('trigger.%s.trigger.concurrent', $this->replication), 1000)
         );
     }
 

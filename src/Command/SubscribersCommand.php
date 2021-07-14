@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Command;
 
 use FriendsOfHyperf\Trigger\Annotation\Subscriber;
+use FriendsOfHyperf\Trigger\Subscriber\SnapshotSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
@@ -57,6 +58,7 @@ class SubscribersCommand extends HyperfCommand
                 return [$property->replication, $class, $property->priority];
             })
             ->merge([
+                ['[default]', SnapshotSubscriber::class, 1],
                 ['[default]', TriggerSubscriber::class, 1],
             ]);
 

@@ -13,6 +13,7 @@ namespace FriendsOfHyperf\Trigger\Process;
 use FriendsOfHyperf\Trigger\Monitor\HealthMonitor;
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
+use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;

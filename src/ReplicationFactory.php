@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
+use FriendsOfHyperf\Trigger\Subscriber\SnapshotSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\ConfigInterface;
@@ -98,6 +99,7 @@ class ReplicationFactory
             /** @var MySQLReplicationFactory $factory */
             $subscribers = $this->subscriberManager->get($replication);
             $subscribers[] = TriggerSubscriber::class;
+            $subscribers[] = SnapshotSubscriber::class;
 
             foreach ($subscribers as $subscriber) {
                 $factory->registerSubscriber(make($subscriber, ['process' => $process]));

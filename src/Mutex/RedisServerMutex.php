@@ -10,8 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Mutex;
 
-use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Logger;
+use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
@@ -33,81 +33,101 @@ class RedisServerMutex implements ServerMutexInterface
     protected $logger;
 
     /**
-     * @var ConsumeProcess
+     * @var string
      */
-    protected $process;
+    private $name;
+
+    /**
+     * @var int
+     */
+    private $expires;
 
     /**
      * @var string
      */
+    private $owner;
+
+    /**
+     * @var mixed
+     */
+    private $keepaliveInterval;
+
+    /**
+     * @var int
+     */
+    private $retryInterval;
+
+    /**
+     * @var bool
+     */
+    private $released = false;
+
+    /**
+     * For logger.
+     * @var string
+     */
     private $replication;
 
-    public function __construct(ContainerInterface $container, ConsumeProcess $process)
+    public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $keepaliveInterval = 10, int $retryInterval = 10, string $replication = 'default')
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->process = $process;
-        $this->replication = $process->getReplication();
+        $this->name = $name;
+        $this->expires = $expires;
+        $this->owner = $owner ?? Util::getInternalIp();
+        $this->keepaliveInterval = $keepaliveInterval;
+        $this->retryInterval = $retryInterval;
+        $this->replication = $replication;
     }
 
     public function attempt(callable $callback = null)
     {
-        $name = $this->process->getMutexName();
-        $expires = $this->process->getMutexExpires();
-        $owner = $this->process->getMutexOwner();
-        $retryInterval = $this->process->getMutexRetryInterval();
-
         while (true) {
             if (
-                $this->redis->set($name, $owner, ['NX', 'EX' => $expires])
-                || $this->redis->get($name) == $owner
+                $this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires])
+                || $this->redis->get($this->name) == $this->owner
             ) {
-                $this->info('Got mutex.');
+                $this->info('Got server mutex.');
                 break;
             }
 
-            $this->info('Waiting mutex.');
+            $this->info('Waiting server mutex.');
 
-            sleep($retryInterval);
+            sleep($this->retryInterval);
         }
 
-        Coroutine::create(function () use ($name, $owner, $expires, $retryInterval) {
-            $this->info('Keepalive start.');
+        Coroutine::create(function () {
+            $this->info('Server mutex keepalive booted.');
 
             while (true) {
-                if ($this->process->isStopped()) {
-                    $this->info('Keepalive stopped.');
+                if ($this->released) {
+                    $this->info('Server mutex released.');
                     break;
                 }
 
-                $this->redis->setNx($name, $owner);
-                $this->redis->expire($name, $expires);
-                $ttl = $this->redis->ttl($name);
-                $this->info('Keepalive executed', ['ttl' => $ttl]);
+                $this->redis->setNx($this->name, $this->owner);
+                $this->redis->expire($this->name, $this->expires);
+                $ttl = $this->redis->ttl($this->name);
+                $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
 
-                sleep($retryInterval);
+                sleep($this->keepaliveInterval);
             }
         });
 
         if ($callback) {
             try {
-                $this->info('Process start.');
                 $callback();
             } catch (Throwable $e) {
                 $this->info($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
-            } finally {
-                $this->info('Process stopped.');
-                $this->process->setStopped(true);
-                $this->release();
-                $this->info('Mutex released.');
             }
         }
     }
 
     public function release(bool $force = false)
     {
-        if ($force || $this->redis->get($this->process->getMutexName()) == $this->process->getMutexOwner()) {
-            $this->redis->del($this->process->getMutexName());
+        if ($force || $this->redis->get($this->name) == $this->owner) {
+            $this->redis->del($this->name);
+            $this->released = true;
         }
     }
 }

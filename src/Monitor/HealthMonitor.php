@@ -45,9 +45,16 @@ class HealthMonitor
      */
     private $binLogCurrent;
 
+    /**
+     * For logger.
+     * @var string
+     */
+    private $replication;
+
     public function __construct(ConsumeProcess $process, BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, int $monitorInterval = 10, int $snapShortInterval = 10)
     {
         $this->process = $process;
+        $this->replication = $process->getReplication();
         $this->monitorInterval = $monitorInterval;
         $this->snapShortInterval = $snapShortInterval;
         $this->binLogCurrentSnapshot = $binLogCurrentSnapshot;

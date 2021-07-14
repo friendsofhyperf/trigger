@@ -119,6 +119,7 @@ class ConsumeProcess extends AbstractProcess
                 'owner' => Util::getInternalIp(),
                 'retryInterval' => $this->serverMutexRetryInterval ?? 10,
                 'keepaliveInterval' => $this->serverMutexKeepaliveInterval ?? 10,
+                'replication' => $this->getReplication(),
             ]);
         }
 

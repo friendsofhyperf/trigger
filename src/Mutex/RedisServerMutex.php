@@ -62,7 +62,13 @@ class RedisServerMutex implements ServerMutexInterface
      */
     private $released = false;
 
-    public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $keepaliveInterval = 10, int $retryInterval = 10)
+    /**
+     * For logger.
+     * @var string
+     */
+    private $replication;
+
+    public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $keepaliveInterval = 10, int $retryInterval = 10, string $replication = 'default')
     {
         $this->redis = $container->get(Redis::class);
         $this->logger = $container->get(StdoutLoggerInterface::class);
@@ -71,6 +77,7 @@ class RedisServerMutex implements ServerMutexInterface
         $this->owner = $owner ?? Util::getInternalIp();
         $this->keepaliveInterval = $keepaliveInterval;
         $this->retryInterval = $retryInterval;
+        $this->replication = $replication;
     }
 
     public function attempt(callable $callback = null)

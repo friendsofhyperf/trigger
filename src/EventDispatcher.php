@@ -36,11 +36,8 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
     public function dispatch(object $event, ?string $eventName = null): object
     {
         $this->concurrent->create(function () use ($event, $eventName) {
+            co(fn () => $this->process->getHealthMonitor()->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent()));
             parent::dispatch($event, $eventName);
-        });
-
-        $this->concurrent->create(function () use ($event) {
-            $this->process->getHealthMonitor()->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
         });
 
         return $event;

@@ -10,9 +10,9 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Process;
 
+use FriendsOfHyperf\Trigger\Monitor\HealthMonitor;
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
 use FriendsOfHyperf\Trigger\ReplicationFactory;
-use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -24,6 +24,7 @@ use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
 use Swoole\Timer;
+use TypeError;
 
 class ConsumeProcess extends AbstractProcess
 {
@@ -52,17 +53,17 @@ class ConsumeProcess extends AbstractProcess
     /**
      * @var null|ServerMutexInterface
      */
-    protected $mutex;
+    protected $serverMutex;
 
     /**
      * @var int
      */
-    protected $mutexExpires = 30;
+    protected $serverMutexExpires = 30;
 
     /**
      * @var int
      */
-    protected $mutexRetryInterval = 10;
+    protected $serverMutexInterval = 10;
 
     /**
      * @var bool
@@ -70,29 +71,24 @@ class ConsumeProcess extends AbstractProcess
     protected $monitor = false;
 
     /**
+     * @var null|HealthMonitor
+     */
+    protected $healthMonitor;
+
+    /**
      * @var int
      */
-    protected $monitorInterval = 30;
-
-    /**
-     * @var bool
-     */
-    protected $stopped = false;
-
-    /**
-     * @var null|BinLogCurrent
-     */
-    protected $binLogCurrent;
-
-    /**
-     * @var BinLogCurrentSnapshotInterface
-     */
-    protected $binLogCurrentSnapshot;
+    protected $healthMonitorInterval = 30;
 
     /**
      * @var int
      */
     protected $snapShortInterval = 10;
+
+    /**
+     * @var bool
+     */
+    protected $stopped = false;
 
     public function __construct(ContainerInterface $container)
     {
@@ -101,13 +97,21 @@ class ConsumeProcess extends AbstractProcess
         $this->name = 'trigger.' . $this->replication;
         $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->replicationFactory = $container->get(ReplicationFactory::class);
-        $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
-            'replication' => $this->replication,
-        ]);
 
         if ($this->onOneServer) {
-            $this->mutex = make(ServerMutexInterface::class, [
+            $this->serverMutex = make(ServerMutexInterface::class, [
+                'name' => 'trigger:mutex:' . $this->replication,
+                'expires' => $this->serverMutexExpires ?? 60,
+                'owner' => Util::getInternalIp(),
+                'interval' => $this->serverMutexInterval ?? 10,
+            ]);
+        }
+
+        if ($this->monitor) {
+            $this->healthMonitor = make(HealthMonitor::class, [
                 'process' => $this,
+                'monitorInterval' => $this->healthMonitorInterval ?? 10,
+                'snapShortInterval' => $this->snapShortInterval ?? 10,
             ]);
         }
     }
@@ -115,77 +119,46 @@ class ConsumeProcess extends AbstractProcess
     public function handle(): void
     {
         $callback = function () {
-            if ($this->isMonitor()) {
-                // Refresh binLogCurrent
-                Coroutine::create(function () {
-                    $this->getCoordinator()->yield();
-
-                    $this->info('@BinLogCurrent renewer booting.');
-
-                    while (true) {
-                        if ($this->isStopped()) {
-                            $this->warn('Process stopped.');
-                            break;
-                        }
-
-                        if ($this->binLogCurrent) {
-                            $this->info(sprintf('Monitoring, binLogCurrent: %s', json_encode($this->binLogCurrent->jsonSerialize())));
-                        } else {
-                            $this->warn('Process not run yet.');
-                        }
-
-                        sleep($this->monitorInterval ?? 10);
-                    }
-                });
-
-                // Health check and set snapshot
-                Coroutine::create(function () {
-                    $this->getCoordinator()->yield();
-
-                    $this->info('@Health checker booting.');
-
-                    while (true) {
-                        if ($this->isStopped()) {
-                            $this->warn('Process stopped.');
-                            break;
-                        }
-
-                        if ($this->binLogCurrent instanceof BinLogCurrent) {
-                            if (
-                                $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
-                                && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
-                            ) {
-                                $this->onReplicationStopped();
-                            }
-
-                            $this->binLogCurrentSnapshot->set($this->binLogCurrent);
-                        }
-
-                        sleep($this->snapShortInterval);
-                    }
-                });
+            // Health monitor
+            if ($this->healthMonitor) {
+                $this->healthMonitor->process();
             }
 
-            $timerId = Timer::after(3000, fn () => $this->getCoordinator()->resume());
+            // Boot replication
+            Coroutine::create(function () {
+                $timerId = Timer::after(1000, fn () => $this->getCoordinator()->resume());
 
-            try {
-                $replication = $this->replicationFactory->make($this);
+                try {
+                    $replication = $this->replicationFactory->make($this);
 
-                while (1) {
-                    if ($this->isStopped()) {
-                        break;
+                    $this->info('Process started.');
+
+                    while (1) {
+                        if ($this->isStopped()) {
+                            break;
+                        }
+
+                        $replication->consume();
                     }
-
-                    $replication->consume();
+                } finally {
+                    Timer::clear($timerId);
+                    $this->stop();
+                    $this->warn('Process stopped.');
                 }
-            } finally {
-                Timer::clear($timerId);
-                $this->setStopped(true);
+            });
+
+            // Running
+            while (1) {
+                if ($this->isStopped()) {
+                    break;
+                }
+
+                sleep(1);
             }
         };
 
-        if ($this->mutex) {
-            $this->mutex->attempt($callback);
+        if ($this->serverMutex) {
+            $this->serverMutex->attempt($callback);
         } else {
             $callback();
         }
@@ -209,33 +182,29 @@ class ConsumeProcess extends AbstractProcess
         return CoordinatorManager::until($this->getName());
     }
 
-    public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
+    /**
+     * @return null|HealthMonitor
+     */
+    public function getHealthMonitor()
     {
-        return $this->binLogCurrentSnapshot;
+        return $this->healthMonitor;
     }
 
-    public function setBinLogCurrent(BinLogCurrent $binLogCurrent): void
+    public function stop(): void
     {
-        $this->binLogCurrent = $binLogCurrent;
+        $this->stopped = true;
+
+        if ($this->serverMutex) {
+            $this->serverMutex->release();
+        }
     }
 
-    public function getBinLogCurrent(): BinLogCurrent
-    {
-        return $this->binLogCurrent;
-    }
-
-    public function isMonitor(): bool
-    {
-        return $this->monitor;
-    }
-
+    /**
+     * @deprecated v2.x
+     */
     public function setStopped(bool $stopped): void
     {
-        $this->stopped = $stopped;
-
-        if ($this->mutex) {
-            $this->mutex->release();
-        }
+        $this->stop();
     }
 
     public function isStopped(): bool
@@ -243,27 +212,16 @@ class ConsumeProcess extends AbstractProcess
         return $this->stopped;
     }
 
-    public function getMutexName(): string
+    public function callOnReplicationStopped($binLogCurrent)
     {
-        return 'trigger:mutex:' . $this->replication;
+        $this->onReplicationStopped($binLogCurrent);
     }
 
-    public function getMutexExpires(): int
-    {
-        return (int) $this->mutexExpires;
-    }
-
-    public function getMutexRetryInterval(): int
-    {
-        return (int) $this->mutexRetryInterval;
-    }
-
-    public function getMutexOwner(): string
-    {
-        return Util::getInternalIp();
-    }
-
-    protected function onReplicationStopped(): void
+    /**
+     * @param null|BinLogCurrent $binLogCurrent
+     * @throws TypeError
+     */
+    protected function onReplicationStopped($binLogCurrent): void
     {
         $this->warn('Replication stopped.');
     }

@@ -14,7 +14,6 @@ use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\Event\DTO\EventDTO;
-use Psr\Container\ContainerInterface;
 use Swoole\Coroutine\Channel;
 
 class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
@@ -36,7 +35,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
      */
     protected $process;
 
-    public function __construct(ContainerInterface $container, ConsumeProcess $process = null)
+    public function __construct(ConsumeProcess $process = null)
     {
         parent::__construct();
 
@@ -44,7 +43,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
         $this->eventChan = new Channel(1000);
 
         Coroutine::create(function () {
-            while (true) {
+            while (1) {
                 if ($this->process->isStopped()) {
                     $this->warn('Process stopped.');
                     break;
@@ -55,11 +54,11 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
             }
         });
 
-        if ($process->isMonitor()) {
+        if ($healthMonitor = $process->getHealthMonitor()) {
             $this->monitorChan = new Channel(1000);
 
-            Coroutine::create(function () {
-                while (true) {
+            Coroutine::create(function () use ($healthMonitor) {
+                while (1) {
                     if ($this->process->isStopped()) {
                         $this->warn('Process stopped.');
                         break;
@@ -67,7 +66,7 @@ class EventDispatcher extends \Symfony\Component\EventDispatcher\EventDispatcher
 
                     [$event] = $this->monitorChan->pop();
                     if ($event instanceof EventDTO) {
-                        $this->process->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
+                        $healthMonitor->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
                     }
                 }
             });

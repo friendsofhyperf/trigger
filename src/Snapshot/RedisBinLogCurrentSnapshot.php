@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Snapshot;
 
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Redis\Redis;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
@@ -26,15 +27,22 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
      */
     private $redis;
 
+    /**
+     * @var ConfigInterface
+     */
+    private $config;
+
     public function __construct(ContainerInterface $container, $replication = 'default')
     {
         $this->replication = $replication;
         $this->redis = $container->get(Redis::class);
+        $this->config = $container->get(ConfigInterface::class);
     }
 
     public function set(BinLogCurrent $binLogCurrent): void
     {
         $this->redis->set($this->key(), serialize($binLogCurrent));
+        $this->redis->expire($this->key(), (int) $this->config->get(sprintf('trigger.%s.snapshot.expires', $this->replication), 24 * 2600));
     }
 
     public function get(): ?BinLogCurrent
@@ -54,8 +62,9 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
     {
         return join(':', [
             'trigger',
-            'bin_log_current',
             'snapshot',
+            'binLogCurrent',
+            $this->config->get(sprintf('trigger.%s.snapshot.version', $this->replication), '1.0'),
             $this->replication,
         ]);
     }

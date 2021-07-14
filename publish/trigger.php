@@ -21,5 +21,10 @@ return [
         'trigger' => [
             'concurrent' => 1000,
         ],
+
+        'snapshot' => [
+            'version' => '1.0',
+            'expires' => 24 * 3600,
+        ],
     ],
 ];

@@ -93,6 +93,8 @@ class TriggerSubscriber extends AbstractSubscriber
 
         foreach ($this->triggerManager->get($key) as $callable) {
             foreach ($event->getValues() as $value) {
+                $this->logger->info('Concurrent length:' . $this->concurrent->length());
+
                 $this->concurrent->create(function () use ($callable, $value, $eventType) {
                     [$class, $method] = $callable;
 

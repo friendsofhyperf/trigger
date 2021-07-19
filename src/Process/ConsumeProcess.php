@@ -160,7 +160,7 @@ class ConsumeProcess extends AbstractProcess
                 } finally {
                     Timer::clear($timerId);
                     $this->stop();
-                    $this->warn('Process stopped.');
+                    $this->warning('Process stopped.');
                 }
             });
 
@@ -248,6 +248,6 @@ class ConsumeProcess extends AbstractProcess
      */
     protected function onReplicationStopped($binLogCurrent): void
     {
-        $this->warn('Replication stopped.');
+        $this->warning('Replication stopped.');
     }
 }

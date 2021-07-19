@@ -19,7 +19,7 @@ use SplPriorityQueue;
 
 class SubscriberManager
 {
-    private array $container = [];
+    private array $subscribers = [];
 
     /**
      * @var StdoutLoggerInterface
@@ -43,8 +43,8 @@ class SubscriberManager
 
         foreach ($queue as $value) {
             [$class, $property] = $value;
-            $this->container[$property->replication] = $this->container[$property->replication] ?? [];
-            $this->container[$property->replication][] = $class;
+            $this->subscribers[$property->replication] = $this->subscribers[$property->replication] ?? [];
+            $this->subscribers[$property->replication][] = $class;
 
             $this->logger->info(sprintf(
                 '[trigger.%s] %s registered by %s process by %s.',
@@ -58,6 +58,6 @@ class SubscriberManager
 
     public function get(string $replication = 'default'): array
     {
-        return Arr::get($this->container, $replication, []);
+        return Arr::get($this->subscribers, $replication, []);
     }
 }

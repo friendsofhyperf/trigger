@@ -70,7 +70,7 @@ class HealthMonitor
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->warn('Process stopped.');
+                    $this->warning('Process stopped.');
                     break;
                 }
 
@@ -95,7 +95,7 @@ class HealthMonitor
 
             while (true) {
                 if ($this->process->isStopped()) {
-                    $this->warn('Process stopped.');
+                    $this->warning('Process stopped.');
                     break;
                 }
 

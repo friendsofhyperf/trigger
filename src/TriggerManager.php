@@ -22,7 +22,7 @@ class TriggerManager
     /**
      * @var array
      */
-    private $container = [];
+    private $triggers = [];
 
     /**
      * @var ConfigInterface
@@ -56,17 +56,17 @@ class TriggerManager
                 $key = $this->buildKey($property->replication, $property->database, $property->table, $eventType);
                 $method = 'on' . ucfirst($eventType);
 
-                $items = Arr::get($this->container, $key, []);
+                $items = Arr::get($this->triggers, $key, []);
                 $items[] = [$class, $method];
 
-                Arr::set($this->container, $key, $items);
+                Arr::set($this->triggers, $key, $items);
             }
         }
     }
 
     public function get(string $key): array
     {
-        return Arr::get($this->container, $key, []);
+        return Arr::get($this->triggers, $key, []);
     }
 
     public function getDatabases(string $replication): array

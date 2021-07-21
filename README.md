@@ -120,6 +120,6 @@ class CustomProcess extends ConsumeProcess
 ```php
 // config/autoload/signal.php
 return [
-    FriendsOfHyperf\Trigger\Handler\TriggerStopHandler::class,
+    FriendsOfHyperf\Trigger\Handler\TriggerStopHandler::class => PHP_INT_MAX,
 ];
 ```

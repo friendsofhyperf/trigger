@@ -113,3 +113,13 @@ class CustomProcess extends ConsumeProcess
 {
     protected $replication = 'custom_replication';
 }
+```
+
+## Signal
+
+```php
+// config/autoload/signal.php
+return [
+    FriendsOfHyperf\Trigger\Handler\TriggerStopHandler::class,
+];
+```

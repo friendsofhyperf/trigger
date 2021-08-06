@@ -20,6 +20,7 @@ use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\EventDTO;
 use MySQLReplication\Event\DTO\RowsDTO;
 use Psr\Container\ContainerInterface;
+use Throwable;
 
 class TriggerSubscriber extends AbstractSubscriber
 {
@@ -115,7 +116,17 @@ class TriggerSubscriber extends AbstractSubscriber
                             return;
                     }
 
-                    call([$this->container->get($class), $method], $args);
+                    try {
+                        call([$this->container->get($class), $method], $args);
+                    } catch (Throwable $e) {
+                        $this->logger->error(sprintf(
+                            "%s in %s:%s\n%s",
+                            $e->getMessage(),
+                            $e->getFile(),
+                            $e->getLine(),
+                            $e->getTraceAsString()
+                        ));
+                    }
                 });
             }
         }

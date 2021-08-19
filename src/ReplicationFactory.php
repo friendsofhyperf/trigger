@@ -70,7 +70,7 @@ class ReplicationFactory
         );
 
         /** @var ConfigBuilder */
-        $configBuilder = tap(new ConfigBuilder(), function ($builder) use ($config, $databasesOnly, $tablesOnly) {
+        $configBuilder = tap(new ConfigBuilder(), function (ConfigBuilder $builder) use ($config, $databasesOnly, $tablesOnly) {
             $builder->withUser($config['user'] ?? 'root')
                 ->withHost($config['host'] ?? '127.0.0.1')
                 ->withPassword($config['password'] ?? 'root')

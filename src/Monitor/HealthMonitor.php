@@ -13,8 +13,8 @@ namespace FriendsOfHyperf\Trigger\Monitor;
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
-use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
+use Swoole\Timer;
 
 class HealthMonitor
 {
@@ -51,6 +51,10 @@ class HealthMonitor
      */
     private $replication;
 
+    private $monitorTimerId;
+
+    private $snapShortTimerId;
+
     public function __construct(ConsumeProcess $process, BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, int $monitorInterval = 10, int $snapShortInterval = 10)
     {
         $this->process = $process;
@@ -63,54 +67,40 @@ class HealthMonitor
     public function process()
     {
         // Monitor binLogCurrent
-        Coroutine::create(function () {
-            $this->process->getCoordinator()->yield();
+        $this->monitorTimerId = Timer::tick($this->monitorInterval * 1000, function () {
+            if ($this->process->isStopped()) {
+                $this->warning('Process stopped.');
+                $this->monitorTimerId && Timer::clear($this->monitorTimerId);
+                return;
+            }
 
-            $this->info('BinLogCurrent monitor booted.');
-
-            while (true) {
-                if ($this->process->isStopped()) {
-                    $this->warning('Process stopped.');
-                    break;
-                }
-
-                if ($this->binLogCurrent) {
-                    $this->info(
-                        sprintf(
-                            'Health monitoring, binLogCurrent: %s',
-                            json_encode($this->binLogCurrent->jsonSerialize())
-                        )
-                    );
-                }
-
-                sleep($this->monitorInterval ?? 10);
+            if ($this->binLogCurrent instanceof BinLogCurrent) {
+                $this->info(
+                    sprintf(
+                        'Health monitoring, binLogCurrent: %s',
+                        json_encode($this->binLogCurrent->jsonSerialize())
+                    )
+                );
             }
         });
 
         // Health check and set snapshot
-        Coroutine::create(function () {
-            $this->process->getCoordinator()->yield();
+        $this->snapShortTimerId = Timer::tick($this->snapShortInterval * 1000, function () {
+            if ($this->process->isStopped()) {
+                $this->warning('Process stopped.');
+                $this->snapShortTimerId && Timer::clear($this->snapShortTimerId);
+                return;
+            }
 
-            $this->info('Health monitor booted.');
-
-            while (true) {
-                if ($this->process->isStopped()) {
-                    $this->warning('Process stopped.');
-                    break;
+            if ($this->binLogCurrent instanceof BinLogCurrent) {
+                if (
+                    $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
+                    && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                ) {
+                    $this->process->callOnReplicationStopped($this->binLogCurrent);
                 }
 
-                if ($this->binLogCurrent instanceof BinLogCurrent) {
-                    if (
-                            $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
-                            && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
-                        ) {
-                        $this->process->callOnReplicationStopped($this->binLogCurrent);
-                    }
-
-                    $this->binLogCurrentSnapshot->set($this->binLogCurrent);
-                }
-
-                sleep($this->snapShortInterval);
+                $this->binLogCurrentSnapshot->set($this->binLogCurrent);
             }
         });
     }

@@ -14,8 +14,8 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
-use Hyperf\Utils\Coroutine;
 use Psr\Container\ContainerInterface;
+use Swoole\Timer;
 use Throwable;
 
 class RedisServerMutex implements ServerMutexInterface
@@ -68,6 +68,8 @@ class RedisServerMutex implements ServerMutexInterface
      */
     private $replication;
 
+    private $keepaliveTimerId;
+
     public function __construct(ContainerInterface $container, string $name, int $expires = 60, ?string $owner = null, int $keepaliveInterval = 10, int $retryInterval = 10, string $replication = 'default')
     {
         $this->redis = $container->get(Redis::class);
@@ -96,29 +98,27 @@ class RedisServerMutex implements ServerMutexInterface
             sleep($this->retryInterval);
         }
 
-        Coroutine::create(function () {
-            $this->info('Server mutex keepalive booted.');
+        $this->info('Server mutex keepalive booted.');
 
-            while (true) {
-                if ($this->released) {
-                    $this->info('Server mutex released.');
-                    break;
-                }
-
-                $this->redis->setNx($this->name, $this->owner);
-                $this->redis->expire($this->name, $this->expires);
-                $ttl = $this->redis->ttl($this->name);
-                $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
-
-                sleep($this->keepaliveInterval);
+        $this->keepaliveTimerId = Timer::tick($this->keepaliveInterval * 1000, function () {
+            if ($this->released) {
+                $this->info('Server mutex released.');
+                $this->keepaliveTimerId && Timer::clear($this->keepaliveTimerId);
+                return;
             }
+
+            $this->redis->setNx($this->name, $this->owner);
+            $this->redis->expire($this->name, $this->expires);
+            $ttl = $this->redis->ttl($this->name);
+
+            $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
         });
 
         if ($callback) {
             try {
                 $callback();
             } catch (Throwable $e) {
-                $this->info($e->getMessage(), ['file' => $e->getFile(), 'line' => $e->getLine()]);
+                $this->info($e->getMessage(), ['position' => $e->getFile() . ':' . $e->getLine()]);
             }
         }
     }

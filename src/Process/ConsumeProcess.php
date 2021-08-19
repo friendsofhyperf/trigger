@@ -20,7 +20,6 @@ use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Process\AbstractProcess;
 use Hyperf\Utils\Coordinator\Coordinator;
 use Hyperf\Utils\Coordinator\CoordinatorManager;
-use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
 use RuntimeException;
@@ -142,35 +141,24 @@ class ConsumeProcess extends AbstractProcess
             }
 
             // Boot replication
-            Coroutine::create(function () {
-                $timerId = Timer::after(1000, fn () => $this->getCoordinator()->resume());
+            $timerId = Timer::after(1000, fn () => $this->getCoordinator()->resume());
 
-                try {
-                    $replication = $this->replicationFactory->make($this);
+            try {
+                $replication = $this->replicationFactory->make($this);
 
-                    $this->info('Process started.');
+                $this->info('Process started.');
 
-                    while (1) {
-                        if ($this->isStopped()) {
-                            break;
-                        }
-
-                        $replication->consume();
+                while (1) {
+                    if ($this->isStopped()) {
+                        break;
                     }
-                } finally {
-                    Timer::clear($timerId);
-                    $this->stop();
-                    $this->warning('Process stopped.');
-                }
-            });
 
-            // Running
-            while (1) {
-                if ($this->isStopped()) {
-                    break;
+                    $replication->consume();
                 }
-
-                sleep(1);
+            } finally {
+                Timer::clear($timerId);
+                $this->stop();
+                $this->warning('Process stopped.');
             }
         };
 

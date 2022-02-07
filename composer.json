@@ -3,20 +3,19 @@
     "description": "MySQL Trigger for hyperf.",
     "type": "library",
     "require": {
-        "php": ">=7.3",
-        "hyperf/command": "~2.2.0",
-        "hyperf/di": "~2.2.0",
-        "hyperf/event": "~2.2.0",
-        "hyperf/process": "~2.2.0",
-        "hyperf/utils": "~2.2.0",
+        "hyperf/command": "3.0.*",
+        "hyperf/di": "3.0.*",
+        "hyperf/event": "3.0.*",
+        "hyperf/process": "3.0.*",
+        "hyperf/utils": "3.0.*",
         "krowinski/php-mysql-replication": "^7.0"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
-        "hyperf/framework": "~2.2.0",
-        "hyperf/redis": "~2.2.0",
-        "hyperf/signal": "~2.2.0",
-        "phpstan/phpstan": "^0.12",
+        "hyperf/framework": "3.0.*",
+        "hyperf/redis": "3.0.*",
+        "hyperf/signal": "3.0.*",
+        "phpstan/phpstan": "^1.0",
         "swoole/ide-helper": "dev-master"
     },
     "autoload": {
@@ -34,7 +33,10 @@
         "hyperf/signal": "Required to use Signal manager."
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true
+        }
     },
     "minimum-stability": "dev",
     "license": "MIT",

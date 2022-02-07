@@ -47,18 +47,12 @@ class TriggerSubscriber extends AbstractSubscriber
     protected $config;
 
     /**
-     * @var ContainerInterface
-     */
-    protected $container;
-
-    /**
      * @var StdoutLoggerInterface
      */
     protected $logger;
 
-    public function __construct(ContainerInterface $container, ConsumeProcess $process)
+    public function __construct(protected ContainerInterface $container, ConsumeProcess $process)
     {
-        $this->container = $container;
         $this->replication = $process->getReplication();
         $this->config = $container->get(ConfigInterface::class);
         $this->triggerManager = $container->get(TriggerManager::class);

@@ -20,30 +20,7 @@ class HealthMonitor
 {
     use Logger;
 
-    /**
-     * @var ConsumeProcess
-     */
-    private $process;
-
-    /**
-     * @var int
-     */
-    private $monitorInterval;
-
-    /**
-     * @var int
-     */
-    private $snapShortInterval;
-
-    /**
-     * @var BinLogCurrentSnapshotInterface
-     */
-    private $binLogCurrentSnapshot;
-
-    /**
-     * @var BinLogCurrent
-     */
-    private $binLogCurrent;
+    private \MySQLReplication\BinLog\BinLogCurrent $binLogCurrent;
 
     /**
      * For logger.
@@ -55,13 +32,9 @@ class HealthMonitor
 
     private $snapShortTimerId;
 
-    public function __construct(ConsumeProcess $process, BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, int $monitorInterval = 10, int $snapShortInterval = 10)
+    public function __construct(private ConsumeProcess $process, private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, private int $monitorInterval = 10, private int $snapShortInterval = 10)
     {
-        $this->process = $process;
         $this->replication = $process->getReplication();
-        $this->monitorInterval = $monitorInterval;
-        $this->snapShortInterval = $snapShortInterval;
-        $this->binLogCurrentSnapshot = $binLogCurrentSnapshot;
     }
 
     public function process()
@@ -78,7 +51,7 @@ class HealthMonitor
                 $this->info(
                     sprintf(
                         'Health monitoring, binLogCurrent: %s',
-                        json_encode($this->binLogCurrent->jsonSerialize())
+                        json_encode($this->binLogCurrent->jsonSerialize(), JSON_THROW_ON_ERROR)
                     )
                 );
             }

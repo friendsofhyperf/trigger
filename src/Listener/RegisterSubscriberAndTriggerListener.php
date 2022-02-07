@@ -23,15 +23,9 @@ use Psr\Container\ContainerInterface;
 #[Listener]
 class RegisterSubscriberAndTriggerListener implements ListenerInterface
 {
-    /**
-     * @var SubscriberManager
-     */
-    private $subscriberManager;
+    private \FriendsOfHyperf\Trigger\SubscriberManager $subscriberManager;
 
-    /**
-     * @var TriggerManager
-     */
-    private $triggerManager;
+    private \FriendsOfHyperf\Trigger\TriggerManager $triggerManager;
 
     public function __construct(ContainerInterface $container)
     {

@@ -24,15 +24,9 @@ use Psr\Container\ContainerInterface;
 #[Command]
 class SubscribersCommand extends HyperfCommand
 {
-    /**
-     * @var string
-     */
-    protected $signature = 'describe:subscribers {--R|replication= : Replication}';
+    protected ?string $signature = 'describe:subscribers {--R|replication= : Replication}';
 
-    /**
-     * @var string
-     */
-    protected $description = 'List all subscribers.';
+    protected string $description = 'List all subscribers.';
 
     public function __construct(ContainerInterface $container)
     {
@@ -55,9 +49,7 @@ class SubscribersCommand extends HyperfCommand
                 }
                 return true;
             })
-            ->transform(function ($property, $class) {
-                return [$property->replication, $class, $property->priority];
-            })
+            ->transform(fn($property, $class) => [$property->replication, $class, $property->priority])
             ->merge([
                 ['[default]', SnapshotSubscriber::class, 1],
                 ['[default]', TriggerSubscriber::class, 1],

@@ -17,24 +17,12 @@ use Psr\Container\ContainerInterface;
 
 class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 {
-    /**
-     * @var string
-     */
-    private $replication;
+    private \Redis $redis;
 
-    /**
-     * @var \Redis
-     */
-    private $redis;
+    private \Hyperf\Contract\ConfigInterface $config;
 
-    /**
-     * @var ConfigInterface
-     */
-    private $config;
-
-    public function __construct(ContainerInterface $container, $replication = 'default')
+    public function __construct(ContainerInterface $container, private $replication = 'default')
     {
-        $this->replication = $replication;
         $this->redis = $container->get(Redis::class);
         $this->config = $container->get(ConfigInterface::class);
     }
@@ -47,15 +35,7 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 
     public function get(): ?BinLogCurrent
     {
-        return with($this->redis->get($this->key()), function ($data) {
-            $data = unserialize((string) $data);
-
-            if (! ($data instanceof BinLogCurrent)) {
-                return null;
-            }
-
-            return $data;
-        });
+        return with($this->redis->get($this->key()));
     }
 
     private function key()

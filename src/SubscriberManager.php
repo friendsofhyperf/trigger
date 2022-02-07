@@ -21,10 +21,7 @@ class SubscriberManager
 {
     private array $subscribers = [];
 
-    /**
-     * @var StdoutLoggerInterface
-     */
-    private $logger;
+    private \Hyperf\Contract\StdoutLoggerInterface $logger;
 
     public function __construct(ContainerInterface $container)
     {
@@ -43,15 +40,15 @@ class SubscriberManager
 
         foreach ($queue as $value) {
             [$class, $property] = $value;
-            $this->subscribers[$property->replication] = $this->subscribers[$property->replication] ?? [];
+            $this->subscribers[$property->replication] ??= [];
             $this->subscribers[$property->replication][] = $class;
 
             $this->logger->info(sprintf(
                 '[trigger.%s] %s registered by %s process by %s.',
                 $property->replication,
-                get_class($this),
+                $this::class,
                 $class,
-                get_class($this)
+                $this::class
             ));
         }
     }

@@ -15,14 +15,8 @@ use MySQLReplication\Event\DTO\EventDTO;
 
 class SnapshotSubscriber extends AbstractSubscriber
 {
-    /**
-     * @var ConsumeProcess
-     */
-    protected $process;
-
-    public function __construct(ConsumeProcess $process)
+    public function __construct(protected ConsumeProcess $process)
     {
-        $this->process = $process;
     }
 
     protected function allEvents(EventDTO $event): void

@@ -75,7 +75,7 @@ class ReplicationFactory
                 ->withHost($config['host'] ?? '127.0.0.1')
                 ->withPassword($config['password'] ?? 'root')
                 ->withPort((int) $config['port'] ?? 3306)
-                ->withSlaveId(rand(100, 999))
+                ->withSlaveId(random_int(100, 999))
                 ->withHeartbeatPeriod((float) $config['heartbeat_period'] ?? 3)
                 ->withDatabasesOnly($databasesOnly)
                 ->withTablesOnly($tablesOnly);

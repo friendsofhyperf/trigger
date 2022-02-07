@@ -19,15 +19,9 @@ use SplPriorityQueue;
 
 class TriggerManager
 {
-    /**
-     * @var array
-     */
-    private $triggers = [];
+    private array $triggers = [];
 
-    /**
-     * @var ConfigInterface
-     */
-    private $config;
+    private \Hyperf\Contract\ConfigInterface $config;
 
     public function __construct(ContainerInterface $container)
     {
@@ -50,8 +44,8 @@ class TriggerManager
             /** @var Trigger $property */
             foreach ($property->events as $eventType) {
                 $config = $this->config->get('trigger.' . $property->replication);
-                $property->table = $property->table ?? class_basename($class);
-                $property->database = $property->database ?? $config['databases_only'][0] ?? '';
+                $property->table ??= class_basename($class);
+                $property->database ??= $config['databases_only'][0] ?? '';
 
                 $key = $this->buildKey($property->replication, $property->database, $property->table, $eventType);
                 $method = 'on' . ucfirst($eventType);
@@ -79,7 +73,7 @@ class TriggerManager
         $tables = [];
 
         foreach ($this->getDatabases($replication) as $database) {
-            $tables = array_merge($tables, array_keys($this->get($this->buildKey($replication, $database))));
+            $tables = [...$tables, ...array_keys($this->get($this->buildKey($replication, $database)))];
         }
 
         return $tables;

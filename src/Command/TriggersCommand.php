@@ -22,15 +22,9 @@ use Psr\Container\ContainerInterface;
 #[Command]
 class TriggersCommand extends HyperfCommand
 {
-    /**
-     * @var string
-     */
-    protected $signature = 'describe:triggers {--R|replication= : Replication} {--T|table= : Table}';
+    protected ?string $signature = 'describe:triggers {--R|replication= : Replication} {--T|table= : Table}';
 
-    /**
-     * @var string
-     */
-    protected $description = 'List all triggers.';
+    protected string $description = 'List all triggers.';
 
     public function __construct(ContainerInterface $container)
     {
@@ -50,7 +44,7 @@ class TriggersCommand extends HyperfCommand
         $rows = collect($triggers)
             ->each(function ($property, $class) {
                 /* @var Trigger $property */
-                $property->table = $property->table ?? class_basename($class);
+                $property->table ??= class_basename($class);
             })
             ->filter(function ($property, $class) {
                 /* @var Trigger $property */
@@ -66,10 +60,7 @@ class TriggersCommand extends HyperfCommand
                 }
                 return true;
             })
-            ->transform(function ($property, $class) {
-                /* @var Trigger $property */
-                return [$property->replication, $property->database, $property->table, implode(',', $property->events), $class, $property->priority];
-            });
+            ->transform(fn ($property, $class) => [$property->replication, $property->database, $property->table, implode(',', $property->events), $class, $property->priority]);
 
         $this->info('Triggers:');
         $this->table(['Replication', 'Database', 'Table', 'Events', 'Trigger', 'Priority'], $rows);

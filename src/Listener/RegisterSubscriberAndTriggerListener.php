@@ -43,7 +43,7 @@ class RegisterSubscriberAndTriggerListener implements ListenerInterface
     /**
      * @param BootApplication $event
      */
-    public function process(object $event)
+    public function process(object $event): void
     {
         $this->subscriberManager->register();
         $this->triggerManager->register();

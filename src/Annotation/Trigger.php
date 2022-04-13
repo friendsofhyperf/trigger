@@ -41,7 +41,7 @@ class Trigger extends AbstractAnnotation
 
             if (is_string($events) && stripos($events, ',')) {
                 $events = explode(',', $events);
-                $events = array_map(fn($item) => trim($item), $events);
+                $events = array_map(fn ($item) => trim($item), $events);
             }
 
             $value['events'] = (array) $events;

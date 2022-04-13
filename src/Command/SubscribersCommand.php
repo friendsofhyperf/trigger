@@ -49,7 +49,7 @@ class SubscribersCommand extends HyperfCommand
                 }
                 return true;
             })
-            ->transform(fn($property, $class) => [$property->replication, $class, $property->priority])
+            ->transform(fn ($property, $class) => [$property->replication, $class, $property->priority])
             ->merge([
                 ['[default]', SnapshotSubscriber::class, 1],
                 ['[default]', TriggerSubscriber::class, 1],

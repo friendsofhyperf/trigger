@@ -17,13 +17,12 @@ use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
-use Hyperf\Coordinator\Coordinator;
+use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
-use RuntimeException;
-use Swoole\Timer;
 use TypeError;
 
 class ConsumeProcess extends AbstractProcess
@@ -92,25 +91,28 @@ class ConsumeProcess extends AbstractProcess
                 $this->healthMonitor->process();
             }
 
-            // Boot replication
-            $timerId = Timer::after(1000, fn () => $this->getCoordinator()->resume());
+            // Worker exit
+            Coroutine::create(function () {
+                CoordinatorManager::until(Constants::WORKER_EXIT)->yield();
 
-            try {
-                $replication = $this->replicationFactory->make($this);
-
-                $this->info('Process started.');
-
-                while (1) {
-                    if ($this->isStopped()) {
-                        break;
-                    }
-
-                    $replication->consume();
-                }
-            } finally {
-                Timer::clear($timerId);
                 $this->stop();
+
                 $this->warning('Process stopped.');
+            });
+
+            $replication = $this->replicationFactory->make($this);
+
+            // Replication start
+            CoordinatorManager::until(self::class)->resume();
+
+            $this->info('Process started.');
+
+            while (1) {
+                if ($this->isStopped()) {
+                    break;
+                }
+
+                $replication->consume();
             }
         };
 
@@ -129,14 +131,6 @@ class ConsumeProcess extends AbstractProcess
     public function getReplication(): string
     {
         return $this->replication;
-    }
-
-    /**
-     * @throws RuntimeException
-     */
-    public function getCoordinator(): Coordinator
-    {
-        return CoordinatorManager::until($this->getName());
     }
 
     /**
@@ -162,14 +156,6 @@ class ConsumeProcess extends AbstractProcess
         if ($this->serverMutex) {
             $this->serverMutex->release();
         }
-    }
-
-    /**
-     * @deprecated v2.x
-     */
-    public function setStopped(bool $stopped): void
-    {
-        $this->stop();
     }
 
     public function isStopped(): bool

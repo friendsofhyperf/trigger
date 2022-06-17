@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Trigger;
 
-use FriendsOfHyperf\Trigger\Constact\TriggerInterface;
+use FriendsOfHyperf\Trigger\Contact\TriggerInterface;
 
 abstract class AbstractTrigger implements TriggerInterface
 {

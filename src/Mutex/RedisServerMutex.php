@@ -13,8 +13,9 @@ namespace FriendsOfHyperf\Trigger\Mutex;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
+use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Redis\Redis;
-use Swoole\Timer;
+use Hyperf\Utils\Coroutine;
 use Throwable;
 
 class RedisServerMutex implements ServerMutexInterface
@@ -37,39 +38,41 @@ class RedisServerMutex implements ServerMutexInterface
     ) {
     }
 
-    public function attempt(callable $callback = null)
+    public function attempt(callable $callback = null): void
     {
         $this->owner ??= Util::getInternalIp();
 
-        while (true) {
-            if (
-                $this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires])
-                || $this->redis->get($this->name) == $this->owner
-            ) {
-                $this->info('Got server mutex.');
-                break;
+        Coroutine::create(function () {
+            while (true) {
+                if ($this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires]) || $this->redis->get($this->name) == $this->owner) {
+                    $this->info('Got server mutex.');
+                    CoordinatorManager::until(__CLASS__)->resume();
+                    break;
+                }
+
+                $this->info('Waiting server mutex.');
+
+                sleep($this->retryInterval);
             }
+        });
 
-            $this->info('Waiting server mutex.');
+        Coroutine::create(function () {
+            CoordinatorManager::until(__CLASS__)->yield();
 
-            sleep($this->retryInterval);
-        }
+            while (true) {
+                $this->redis->setNx($this->name, $this->owner);
+                $this->redis->expire($this->name, $this->expires);
+                $ttl = $this->redis->ttl($this->name);
+
+                $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
+
+                sleep($this->keepaliveInterval);
+            }
+        });
+
+        CoordinatorManager::until(__CLASS__)->yield();
 
         $this->info('Server mutex keepalive booted.');
-
-        $this->keepaliveTimerId = Timer::tick($this->keepaliveInterval * 1000, function () {
-            if ($this->released) {
-                $this->info('Server mutex released.');
-                $this->keepaliveTimerId && Timer::clear($this->keepaliveTimerId);
-                return;
-            }
-
-            $this->redis->setNx($this->name, $this->owner);
-            $this->redis->expire($this->name, $this->expires);
-            $ttl = $this->redis->ttl($this->name);
-
-            $this->info('Server mutex keepalive executed', ['ttl' => $ttl]);
-        });
 
         if ($callback) {
             try {
@@ -80,7 +83,7 @@ class RedisServerMutex implements ServerMutexInterface
         }
     }
 
-    public function release(bool $force = false)
+    public function release(bool $force = false): void
     {
         if ($force || $this->redis->get($this->name) == $this->owner) {
             $this->redis->del($this->name);

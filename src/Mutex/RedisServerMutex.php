@@ -46,12 +46,11 @@ class RedisServerMutex implements ServerMutexInterface
         $this->retryInterval = (int) $process->getOption('server_mutex.retry_interval', 10);
         $this->keepaliveInterval = (int) $process->getOption('server_mutex.keepalive_interval', 10);
         $this->replication = $process->getReplication();
+        $this->owner = $owner ?? Util::getInternalIp();
     }
 
     public function attempt(callable $callback = null): void
     {
-        $this->owner ??= Util::getInternalIp();
-
         Coroutine::create(function () {
             while (true) {
                 if ($this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires]) || $this->redis->get($this->name) == $this->owner) {

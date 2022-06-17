@@ -8,7 +8,7 @@ declare(strict_types=1);
  * @document https://github.com/friendsofhyperf/trigger/blob/main/README.md
  * @contact  huangdijia@gmail.com
  */
-namespace FriendsOfHyperf\Trigger\Constact;
+namespace FriendsOfHyperf\Trigger\Contact;
 
 interface TriggerInterface
 {

@@ -1,6 +1,5 @@
 # Trigger
 
-[![Open in Visual Studio Code](https://open.vscode.dev/badges/open-in-vscode.svg)](https://open.vscode.dev/friendsofhyperf/trigger)
 [![Latest Stable Version](https://poser.pugx.org/friendsofhyperf/trigger/version.png)](https://packagist.org/packages/friendsofhyperf/trigger)
 [![Total Downloads](https://poser.pugx.org/friendsofhyperf/trigger/d/total.png)](https://packagist.org/packages/friendsofhyperf/trigger)
 [![GitHub license](https://img.shields.io/github/license/friendsofhyperf/trigger)](https://github.com/friendsofhyperf/trigger)
@@ -30,16 +29,7 @@ use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use FriendsOfHyperf\Trigger\Trigger\AbstractTrigger;
 use MySQLReplication\Event\DTO\EventDTO;
 
-/**
- * single
- * @Trigger(table="table", on="write", replication="default")
- * or multi events by array
- * @Trigger(table="table", on={"write", "update", "delete"}, replication="default")
- * or multi events by string
- * @Trigger(table="table", on="write,update,delete", replication="default")
- * or all events
- * @Trigger(table="table", on="*", replication="default")
- */
+#[Trigger(table:"table", on:"*", replication:"default")]
 class SomeTableTrigger extends AbstractTrigger
 {
     public function onWrite(array $new)
@@ -68,9 +58,7 @@ use FriendsOfHyperf\Trigger\Annotation\Subscriber;
 use FriendsOfHyperf\Trigger\Subscriber\AbstractEventSubscriber;
 use MySQLReplication\Event\DTO\EventDTO;
 
-/**
- * @Subscriber(replication="default")
- */
+#[Subscriber(replication:"default")]
 class DemoSubscriber extends AbstractEventSubscriber
 {
     protected function allEvents(EventDTO $event): void
@@ -90,9 +78,7 @@ namespace App\Process;
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use Hyperf\Process\Annotation\Process;
 
-/**
- * @Process
- */
+#[Process]
 class TriggerProcess extends ConsumeProcess
 {
 }
@@ -106,9 +92,7 @@ namespace App\Process;
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use Hyperf\Process\Annotation\Process;
 
-/**
- * @Process
- */
+#[Process]
 class CustomProcess extends ConsumeProcess
 {
     protected $replication = 'custom_replication';

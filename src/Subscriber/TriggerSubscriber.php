@@ -26,30 +26,15 @@ class TriggerSubscriber extends AbstractSubscriber
 {
     use Logger;
 
-    /**
-     * @var TriggerManager
-     */
-    protected $triggerManager;
+    protected TriggerManager $triggerManager;
 
-    /**
-     * @var string
-     */
-    protected $replication;
+    protected string $replication;
 
-    /**
-     * @var Concurrent
-     */
-    protected $concurrent;
+    protected Concurrent $concurrent;
 
-    /**
-     * @var ConfigInterface
-     */
-    protected $config;
+    protected ConfigInterface $config;
 
-    /**
-     * @var StdoutLoggerInterface
-     */
-    protected $logger;
+    protected StdoutLoggerInterface $logger;
 
     public function __construct(protected ContainerInterface $container, ConsumeProcess $process)
     {

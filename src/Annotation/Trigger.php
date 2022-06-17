@@ -17,7 +17,7 @@ use Hyperf\Di\Annotation\AbstractAnnotation;
 class Trigger extends AbstractAnnotation
 {
     public function __construct(
-        public string $database,
+        public ?string $database = null,
         public string $table,
         public array $events = ['*'],
         public string $replication = 'default',

@@ -13,18 +13,11 @@ namespace FriendsOfHyperf\Trigger\Snapshot;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Redis\Redis;
 use MySQLReplication\BinLog\BinLogCurrent;
-use Psr\Container\ContainerInterface;
 
 class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 {
-    private \Redis $redis;
-
-    private \Hyperf\Contract\ConfigInterface $config;
-
-    public function __construct(ContainerInterface $container, private $replication = 'default')
+    public function __construct(private Redis $redis, private ConfigInterface $config, private $replication = 'default')
     {
-        $this->redis = $container->get(Redis::class);
-        $this->config = $container->get(ConfigInterface::class);
     }
 
     public function set(BinLogCurrent $binLogCurrent): void

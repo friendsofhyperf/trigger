@@ -26,22 +26,18 @@ class TriggerSubscriber extends AbstractSubscriber
 {
     use Logger;
 
-    protected TriggerManager $triggerManager;
-
     protected string $replication;
 
     protected Concurrent $concurrent;
 
-    protected ConfigInterface $config;
-
-    protected StdoutLoggerInterface $logger;
-
-    public function __construct(protected ContainerInterface $container, ConsumeProcess $process)
-    {
+    public function __construct(
+        protected ContainerInterface $container,
+        protected ConfigInterface $config,
+        protected TriggerManager $triggerManager,
+        protected StdoutLoggerInterface $logger,
+        ConsumeProcess $process
+    ) {
         $this->replication = $process->getReplication();
-        $this->config = $container->get(ConfigInterface::class);
-        $this->triggerManager = $container->get(TriggerManager::class);
-        $this->logger = $container->get(StdoutLoggerInterface::class);
         $this->concurrent = new Concurrent(
             (int) $this->config->get(sprintf('trigger.%s.trigger.concurrent', $this->replication), 1000)
         );

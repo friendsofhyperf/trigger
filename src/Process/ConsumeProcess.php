@@ -23,7 +23,6 @@ use Hyperf\Process\AbstractProcess;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
-use TypeError;
 
 class ConsumeProcess extends AbstractProcess
 {
@@ -133,18 +132,12 @@ class ConsumeProcess extends AbstractProcess
         return $this->replication;
     }
 
-    /**
-     * @return null|HealthMonitor
-     */
-    public function getHealthMonitor()
+    public function getHealthMonitor(): ?HealthMonitor
     {
         return $this->healthMonitor;
     }
 
-    /**
-     * @return BinLogCurrentSnapshotInterface
-     */
-    public function getBinLogCurrentSnapshot()
+    public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
     {
         return $this->binLogCurrentSnapshot;
     }
@@ -168,11 +161,7 @@ class ConsumeProcess extends AbstractProcess
         $this->onReplicationStopped($binLogCurrent);
     }
 
-    /**
-     * @param null|BinLogCurrent $binLogCurrent
-     * @throws TypeError
-     */
-    protected function onReplicationStopped($binLogCurrent): void
+    protected function onReplicationStopped(?BinLogCurrent $binLogCurrent): void
     {
         $this->warning('Replication stopped.');
     }

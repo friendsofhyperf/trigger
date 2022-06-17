@@ -18,7 +18,7 @@ class Trigger extends AbstractAnnotation
 {
     public function __construct(
         public ?string $database = null,
-        public string $table,
+        public ?string $table = null,
         public array $events = ['*'],
         public string $replication = 'default',
         public int $priority = 0

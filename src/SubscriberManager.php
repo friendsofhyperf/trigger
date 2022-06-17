@@ -26,7 +26,7 @@ class SubscriberManager
 
     public function register()
     {
-        /** @var Subscriber[] */
+        /** @var Subscriber[] $classes */
         $classes = AnnotationCollector::getClassesByAnnotation(Subscriber::class);
         $queue = new SplPriorityQueue();
 
@@ -51,6 +51,6 @@ class SubscriberManager
 
     public function get(string $replication = 'default'): array
     {
-        return Arr::get($this->subscribers, $replication, []);
+        return (array) Arr::get($this->subscribers, $replication, []);
     }
 }

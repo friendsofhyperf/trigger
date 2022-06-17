@@ -12,7 +12,6 @@ namespace FriendsOfHyperf\Trigger\Traits;
 
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\ApplicationContext;
-use TypeError;
 
 trait Logger
 {
@@ -24,15 +23,6 @@ trait Logger
     protected function debug(string $message, array $context = []): void
     {
         $this->getLogger()->debug($this->messageFormat($message, $context));
-    }
-
-    /**
-     * @deprecated
-     * @throws TypeError
-     */
-    protected function warn(string $message, array $context = []): void
-    {
-        $this->warning(...func_get_args());
     }
 
     protected function warning(string $message, array $context = []): void

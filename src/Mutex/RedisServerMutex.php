@@ -14,7 +14,6 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Redis\Redis;
-use Psr\Container\ContainerInterface;
 use Swoole\Timer;
 use Throwable;
 
@@ -22,35 +21,26 @@ class RedisServerMutex implements ServerMutexInterface
 {
     use Logger;
 
-    /**
-     * @var \Redis
-     */
-    protected $redis;
-
-    protected StdoutLoggerInterface $logger;
-
-    private string $owner;
-
     private bool $released = false;
 
     private $keepaliveTimerId;
 
     public function __construct(
-        ContainerInterface $container,
-        private string $name,
+        protected StdoutLoggerInterface $logger,
+        protected Redis $redis,
+        private string $replication = 'default',
+        private ?string $name = null,
+        protected ?string $owner = null,
         private int $expires = 60,
-        ?string $owner = null,
         private int $keepaliveInterval = 10,
-        private int $retryInterval = 10,
-        private string $replication = 'default'
+        private int $retryInterval = 10
     ) {
-        $this->redis = $container->get(Redis::class);
-        $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->owner = $owner ?? Util::getInternalIp();
     }
 
     public function attempt(callable $callback = null)
     {
+        $this->owner ??= Util::getInternalIp();
+
         while (true) {
             if (
                 $this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires])

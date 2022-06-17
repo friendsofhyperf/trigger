@@ -19,14 +19,8 @@ use Psr\Container\ContainerInterface;
 
 class TriggerStopHandler implements SignalHandlerInterface
 {
-    /**
-     * @var ConfigInterface
-     */
-    protected $config;
-
-    public function __construct(protected ContainerInterface $container)
+    public function __construct(protected ContainerInterface $container, protected ConfigInterface $config)
     {
-        $this->config = $container->get(ConfigInterface::class);
     }
 
     public function listen(): array

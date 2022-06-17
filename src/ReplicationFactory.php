@@ -18,38 +18,17 @@ use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
-use Psr\Container\ContainerInterface;
 
 class ReplicationFactory
 {
     use Logger;
 
-    /**
-     * @var ConfigInterface
-     */
-    protected $config;
-
-    /**
-     * @var SubscriberManager
-     */
-    protected $subscriberManager;
-
-    /**
-     * @var TriggerManager
-     */
-    protected $triggerManager;
-
-    /**
-     * @var StdoutLoggerInterface
-     */
-    protected $logger;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->config = $container->get(ConfigInterface::class);
-        $this->subscriberManager = $container->get(SubscriberManager::class);
-        $this->triggerManager = $container->get(TriggerManager::class);
-        $this->logger = $container->get(StdoutLoggerInterface::class);
+    public function __construct(
+        protected ConfigInterface $config,
+        protected subscriberManager $subscriberManager,
+        protected TriggerManager $triggerManager,
+        protected StdoutLoggerInterface $logger
+    ) {
     }
 
     public function make(ConsumeProcess $process): MySQLReplicationFactory

@@ -30,83 +30,35 @@ class ConsumeProcess extends AbstractProcess
 {
     use Logger;
 
-    /**
-     * @var StdoutLoggerInterface
-     */
-    protected $logger;
+    protected string $replication = 'default';
 
-    /**
-     * @var string
-     */
-    protected $replication = 'default';
+    protected bool $onOneServer = false;
 
-    /**
-     * @var ReplicationFactory
-     */
-    protected $replicationFactory;
+    protected ?ServerMutexInterface $serverMutex;
 
-    /**
-     * @var bool
-     */
-    protected $onOneServer = false;
+    protected int $serverMutexExpires = 30;
 
-    /**
-     * @var null|ServerMutexInterface
-     */
-    protected $serverMutex;
+    protected int $serverMutexKeepaliveInterval = 10;
 
-    /**
-     * @var int
-     */
-    protected $serverMutexExpires = 30;
+    protected int $serverMutexRetryInterval = 10;
 
-    /**
-     * @var int
-     */
-    protected $serverMutexKeepaliveInterval = 10;
+    protected bool $monitor = false;
 
-    /**
-     * @var int
-     */
-    protected $serverMutexRetryInterval = 10;
+    protected ?HealthMonitor $healthMonitor;
 
-    /**
-     * @var bool
-     */
-    protected $monitor = false;
+    protected int $healthMonitorInterval = 30;
 
-    /**
-     * @var null|HealthMonitor
-     */
-    protected $healthMonitor;
+    protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
-    /**
-     * @var int
-     */
-    protected $healthMonitorInterval = 30;
+    protected int $snapShortInterval = 10;
 
-    /**
-     * @var BinLogCurrentSnapshotInterface
-     */
-    protected $binLogCurrentSnapshot;
+    protected bool $stopped = false;
 
-    /**
-     * @var int
-     */
-    protected $snapShortInterval = 10;
-
-    /**
-     * @var bool
-     */
-    protected $stopped = false;
-
-    public function __construct(ContainerInterface $container)
+    public function __construct(ContainerInterface $container, protected StdoutLoggerInterface $logger, protected ReplicationFactory $replicationFactory)
     {
         parent::__construct($container);
 
         $this->name = 'trigger.' . $this->replication;
-        $this->logger = $container->get(StdoutLoggerInterface::class);
-        $this->replicationFactory = $container->get(ReplicationFactory::class);
         $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
             'replication' => $this->replication,
         ]);

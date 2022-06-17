@@ -24,9 +24,8 @@ class HealthMonitor
 
     /**
      * For logger.
-     * @var string
      */
-    private $replication;
+    private string $replication;
 
     private $monitorTimerId;
 

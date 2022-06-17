@@ -18,13 +18,26 @@ return [
         'tables_only' => env('TRIGGER_TABLES_ONLY', '') ? explode(',', env('TRIGGER_TABLES_ONLY')) : [],
         'heartbeat_period' => (int) env('TRIGGER_HEARTBEAT', 3),
 
-        'trigger' => [
-            'concurrent' => 1000,
+        'server_mutex' => [
+            'enable' => true,
+            'expires' => 30,
+            'keepalive_interval' => 10,
+            'retry_interval' => 10,
+        ],
+
+        'health_monitor' => [
+            'enable' => true,
+            'interval' => 30,
         ],
 
         'snapshot' => [
             'version' => '1.0',
             'expires' => 24 * 3600,
+            'interval' => 10,
+        ],
+
+        'concurrent' => [
+            'limit' => 1000,
         ],
     ],
 ];

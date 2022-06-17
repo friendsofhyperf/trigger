@@ -28,13 +28,18 @@ class HealthMonitor
      */
     private string $replication;
 
-    public function __construct(
-        private ConsumeProcess $process,
-        private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot,
-        private int $monitorInterval = 10,
-        private int $snapShortInterval = 10
-    ) {
+    private int $monitorInterval = 10;
+
+    private int $snapShortInterval = 10;
+
+    private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
+
+    public function __construct(private ConsumeProcess $process)
+    {
         $this->replication = $process->getReplication();
+        $this->monitorInterval = (int) $process->getOption('health_monitor.interval', 10);
+        $this->snapShortInterval = (int) $process->getOption('snapshot.interval', 10);
+        $this->binLogCurrentSnapshot = $process->getBinLogCurrentSnapshot();
     }
 
     public function process(): void

@@ -16,10 +16,12 @@ use FriendsOfHyperf\Trigger\ReplicationFactory;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
+use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Process\AbstractProcess;
+use Hyperf\Utils\Arr;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
@@ -30,55 +32,40 @@ class ConsumeProcess extends AbstractProcess
 
     protected string $replication = 'default';
 
-    protected bool $onOneServer = false;
+    protected ?array $options;
 
     protected ?ServerMutexInterface $serverMutex;
 
-    protected int $serverMutexExpires = 30;
-
-    protected int $serverMutexKeepaliveInterval = 10;
-
-    protected int $serverMutexRetryInterval = 10;
-
-    protected bool $monitor = false;
-
     protected ?HealthMonitor $healthMonitor;
-
-    protected int $healthMonitorInterval = 30;
 
     protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
-    protected int $snapShortInterval = 10;
-
     protected bool $stopped = false;
 
-    public function __construct(ContainerInterface $container, protected StdoutLoggerInterface $logger, protected ReplicationFactory $replicationFactory)
-    {
+    public function __construct(
+        ContainerInterface $container,
+        protected ConfigInterface $config,
+        protected StdoutLoggerInterface $logger,
+        protected ReplicationFactory $replicationFactory
+    ) {
         parent::__construct($container);
 
         $this->name = 'trigger.' . $this->replication;
+
         $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
             'replication' => $this->replication,
         ]);
 
-        if ($this->onOneServer) {
+        if ($this->getOption('server_mutex.enable', true)) {
             $this->serverMutex = make(ServerMutexInterface::class, [
+                'process' => $this,
                 'name' => 'trigger:mutex:' . $this->replication,
-                'expires' => $this->serverMutexExpires ?? 60,
                 'owner' => Util::getInternalIp(),
-                'retryInterval' => $this->serverMutexRetryInterval ?? 10,
-                'keepaliveInterval' => $this->serverMutexKeepaliveInterval ?? 10,
-                'replication' => $this->getReplication(),
             ]);
         }
 
-        if ($this->monitor) {
-            $this->healthMonitor = make(HealthMonitor::class, [
-                'process' => $this,
-                'binLogCurrentSnapshot' => $this->binLogCurrentSnapshot,
-                'monitorInterval' => $this->healthMonitorInterval ?? 10,
-                'snapShortInterval' => $this->snapShortInterval ?? 10,
-            ]);
+        if ($this->getOption('health_monitor.enable', true)) {
+            $this->healthMonitor = make(HealthMonitor::class, ['process' => $this]);
         }
     }
 
@@ -159,6 +146,19 @@ class ConsumeProcess extends AbstractProcess
     public function callOnReplicationStopped($binLogCurrent)
     {
         $this->onReplicationStopped($binLogCurrent);
+    }
+
+    public function getOption(?string $key = null, $default = null)
+    {
+        if (is_null($this->options)) {
+            $this->options = (array) $this->config->get('trigger.' . $this->replication, []);
+        }
+
+        if (is_null($key)) {
+            return $this->options;
+        }
+
+        return Arr::get($this->options, $key, $default);
     }
 
     protected function onReplicationStopped(?BinLogCurrent $binLogCurrent): void

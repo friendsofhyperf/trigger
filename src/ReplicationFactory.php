@@ -14,7 +14,6 @@ use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Subscriber\SnapshotSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use FriendsOfHyperf\Trigger\Traits\Logger;
-use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
@@ -24,7 +23,6 @@ class ReplicationFactory
     use Logger;
 
     public function __construct(
-        protected ConfigInterface $config,
         protected subscriberManager $subscriberManager,
         protected TriggerManager $triggerManager,
         protected StdoutLoggerInterface $logger
@@ -34,9 +32,8 @@ class ReplicationFactory
     public function make(ConsumeProcess $process): MySQLReplicationFactory
     {
         $replication = $process->getReplication();
-
-        // Get config of replication
-        $config = $this->config->get('trigger.' . $replication);
+        // Get options
+        $config = (array) $process->getOption();
         // Get databases of replication
         $databasesOnly = array_merge(
             $config['databases_only'] ?? [],

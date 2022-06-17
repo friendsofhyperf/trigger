@@ -13,7 +13,6 @@ namespace FriendsOfHyperf\Trigger\Subscriber;
 use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
-use Hyperf\Contract\ConfigInterface;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Utils\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
@@ -32,14 +31,13 @@ class TriggerSubscriber extends AbstractSubscriber
 
     public function __construct(
         protected ContainerInterface $container,
-        protected ConfigInterface $config,
         protected TriggerManager $triggerManager,
         protected StdoutLoggerInterface $logger,
         ConsumeProcess $process
     ) {
         $this->replication = $process->getReplication();
         $this->concurrent = new Concurrent(
-            (int) $this->config->get(sprintf('trigger.%s.trigger.concurrent', $this->replication), 1000)
+            (int) $process->getOption('concurrent.limit', 1000)
         );
     }
 

@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Mutex;
 
+use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -26,16 +27,25 @@ class RedisServerMutex implements ServerMutexInterface
 
     private $keepaliveTimerId;
 
+    private int $expires = 60;
+
+    private int $keepaliveInterval = 10;
+
+    private int $retryInterval = 10;
+
+    private string $replication = 'default';
+
     public function __construct(
         protected StdoutLoggerInterface $logger,
         protected Redis $redis,
-        private string $replication = 'default',
         private ?string $name = null,
         protected ?string $owner = null,
-        private int $expires = 60,
-        private int $keepaliveInterval = 10,
-        private int $retryInterval = 10
+        ConsumeProcess $process
     ) {
+        $this->expires = (int) $process->getOption('server_mutex.expires', 60);
+        $this->retryInterval = (int) $process->getOption('server_mutex.retry_interval', 10);
+        $this->keepaliveInterval = (int) $process->getOption('server_mutex.keepalive_interval', 10);
+        $this->replication = $process->getReplication();
     }
 
     public function attempt(callable $callback = null): void

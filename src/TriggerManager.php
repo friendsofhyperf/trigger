@@ -14,23 +14,19 @@ use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Utils\Arr;
-use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
 
 class TriggerManager
 {
     private array $triggers = [];
 
-    private \Hyperf\Contract\ConfigInterface $config;
-
-    public function __construct(ContainerInterface $container)
+    public function __construct(private ConfigInterface $config)
     {
-        $this->config = $container->get(ConfigInterface::class);
     }
 
     public function register(): void
     {
-        /** @var Trigger[] */
+        /** @var Trigger[] $classes */
         $classes = AnnotationCollector::getClassesByAnnotation(Trigger::class);
         $queue = new SplPriorityQueue();
 

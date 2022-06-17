@@ -32,8 +32,12 @@ class HealthMonitor
 
     private $snapShortTimerId;
 
-    public function __construct(private ConsumeProcess $process, private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot, private int $monitorInterval = 10, private int $snapShortInterval = 10)
-    {
+    public function __construct(
+        private ConsumeProcess $process,
+        private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot,
+        private int $monitorInterval = 10,
+        private int $snapShortInterval = 10
+    ) {
         $this->replication = $process->getReplication();
     }
 

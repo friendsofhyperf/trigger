@@ -13,19 +13,10 @@ namespace FriendsOfHyperf\Trigger\Annotation;
 use Attribute;
 use Hyperf\Di\Annotation\AbstractAnnotation;
 
-/**
- * @Annotation
- * @Target("CLASS")
- */
 #[Attribute(Attribute::TARGET_CLASS)]
 class Subscriber extends AbstractAnnotation
 {
-    public string  $replication = 'default';
-
-    public int $priority = 0;
-
-    public function __construct($value = null)
+    public function __construct(public string $replication = 'default', public int $priority = 0)
     {
-        parent::__construct($value);
     }
 }

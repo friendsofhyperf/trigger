@@ -15,22 +15,14 @@ use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Event\Annotation\Listener;
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\BootApplication;
-use Psr\Container\ContainerInterface;
 
-/**
- * @Listener
- */
 #[Listener]
 class RegisterSubscriberAndTriggerListener implements ListenerInterface
 {
-    private \FriendsOfHyperf\Trigger\SubscriberManager $subscriberManager;
-
-    private \FriendsOfHyperf\Trigger\TriggerManager $triggerManager;
-
-    public function __construct(ContainerInterface $container)
-    {
-        $this->subscriberManager = $container->get(SubscriberManager::class);
-        $this->triggerManager = $container->get(TriggerManager::class);
+    public function __construct(
+        private SubscriberManager $subscriberManager,
+        private TriggerManager $triggerManager
+    ) {
     }
 
     public function listen(): array

@@ -18,9 +18,6 @@ use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Psr\Container\ContainerInterface;
 
-/**
- * @Command
- */
 #[Command]
 class SubscribersCommand extends HyperfCommand
 {

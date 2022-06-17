@@ -13,40 +13,15 @@ namespace FriendsOfHyperf\Trigger\Annotation;
 use Attribute;
 use Hyperf\Di\Annotation\AbstractAnnotation;
 
-/**
- * @Annotation
- * @Target("CLASS")
- */
 #[Attribute(Attribute::TARGET_CLASS)]
 class Trigger extends AbstractAnnotation
 {
-    public string $replication = 'default';
-
-    public string $database;
-
-    public string $table;
-
-    public array $events = [];
-
-    public int $priority = 0;
-
-    public function __construct($value = null)
-    {
-        if (isset($value['on'])) {
-            $events = $value['on'];
-
-            if ($events == '*') {
-                $events = ['write', 'update', 'delete'];
-            }
-
-            if (is_string($events) && stripos($events, ',')) {
-                $events = explode(',', $events);
-                $events = array_map(fn ($item) => trim($item), $events);
-            }
-
-            $value['events'] = (array) $events;
-        }
-
-        parent::__construct($value);
+    public function __construct(
+        public string $database,
+        public string $table,
+        public array $events = ['*'],
+        public string $replication = 'default',
+        public int $priority = 0
+    ) {
     }
 }

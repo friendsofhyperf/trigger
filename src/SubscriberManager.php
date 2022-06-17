@@ -14,18 +14,14 @@ use FriendsOfHyperf\Trigger\Annotation\Subscriber;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Hyperf\Utils\Arr;
-use Psr\Container\ContainerInterface;
 use SplPriorityQueue;
 
 class SubscriberManager
 {
     private array $subscribers = [];
 
-    private \Hyperf\Contract\StdoutLoggerInterface $logger;
-
-    public function __construct(ContainerInterface $container)
+    public function __construct(private StdoutLoggerInterface $logger)
     {
-        $this->logger = $container->get(StdoutLoggerInterface::class);
     }
 
     public function register()

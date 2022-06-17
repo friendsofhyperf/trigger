@@ -52,7 +52,7 @@ class SubscribersCommand extends HyperfCommand
                 ['[default]', TriggerSubscriber::class, 1],
             ]);
 
-        $this->info('Subscibers:');
-        $this->table(['Replication', 'Subsciber', 'Priority'], $rows);
+        $this->info('Subscribers:');
+        $this->table(['Replication', 'Subscriber', 'Priority'], $rows);
     }
 }

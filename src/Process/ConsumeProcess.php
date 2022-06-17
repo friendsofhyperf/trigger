@@ -32,25 +32,25 @@ class ConsumeProcess extends AbstractProcess
 
     protected string $replication = 'default';
 
-    protected ?array $options;
+    private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
-    protected ?ServerMutexInterface $serverMutex;
+    private ?HealthMonitor $healthMonitor;
 
-    protected ?HealthMonitor $healthMonitor;
+    private ?ServerMutexInterface $serverMutex;
 
-    protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
+    private array $options;
 
-    protected bool $stopped = false;
+    private bool $stopped = false;
 
     public function __construct(
         ContainerInterface $container,
-        protected ConfigInterface $config,
         protected StdoutLoggerInterface $logger,
         protected ReplicationFactory $replicationFactory
     ) {
         parent::__construct($container);
 
         $this->name = 'trigger.' . $this->replication;
+        $this->options = (array) $container->get(ConfigInterface::class)->get('trigger.' . $this->replication, []);
 
         $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
             'replication' => $this->replication,
@@ -150,10 +150,6 @@ class ConsumeProcess extends AbstractProcess
 
     public function getOption(?string $key = null, $default = null)
     {
-        if (is_null($this->options)) {
-            $this->options = (array) $this->config->get('trigger.' . $this->replication, []);
-        }
-
         if (is_null($key)) {
             return $this->options;
         }

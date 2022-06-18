@@ -53,6 +53,7 @@ class ConsumeProcess extends AbstractProcess
         $this->options = (array) $container->get(ConfigInterface::class)->get('trigger.' . $this->replication, []);
 
         $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
+            'process' => $this,
             'replication' => $this->replication,
         ]);
 

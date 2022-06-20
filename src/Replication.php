@@ -116,7 +116,7 @@ class Replication
             $replication = $this->makeReplication();
 
             // Replication start
-            CoordinatorManager::until($this->getReplication())->resume();
+            CoordinatorManager::until($this->getIdentifier())->resume();
 
             $this->debug('Process started.');
 

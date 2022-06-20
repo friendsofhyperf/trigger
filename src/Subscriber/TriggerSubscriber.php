@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
+use FriendsOfHyperf\Trigger\Replication;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -25,19 +25,16 @@ class TriggerSubscriber extends AbstractSubscriber
 {
     use Logger;
 
-    protected string $replication;
-
     protected Concurrent $concurrent;
 
     public function __construct(
         protected ContainerInterface $container,
         protected TriggerManager $triggerManager,
         protected StdoutLoggerInterface $logger,
-        ConsumeProcess $process
+        protected Replication $replication
     ) {
-        $this->replication = $process->getReplication();
         $this->concurrent = new Concurrent(
-            (int) $process->getOption('concurrent.limit', 1000)
+            (int) $replication->getOption('concurrent.limit') ?? 1000
         );
     }
 

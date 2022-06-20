@@ -39,7 +39,7 @@ class SubscriberManager
             $this->subscribers[$property->replication] ??= [];
             $this->subscribers[$property->replication][] = $class;
 
-            $this->logger->info(sprintf(
+            $this->logger->debug(sprintf(
                 '[trigger.%s] %s registered by %s process by %s.',
                 $property->replication,
                 $this::class,

@@ -72,6 +72,7 @@ class RedisServerMutex implements ServerMutexInterface
                 $isExited = CoordinatorManager::until(Constants::WORKER_EXIT)->yield($this->keepaliveInterval);
 
                 if ($isExited) {
+                    $this->warning('Server mutex exited.');
                     break;
                 }
 
@@ -106,6 +107,6 @@ class RedisServerMutex implements ServerMutexInterface
 
     protected function getIdentifier(): string
     {
-        return __CLASS__ . ':' . $this->replication;
+        return sprintf('%s_%s', $this->replication, __CLASS__);
     }
 }

@@ -31,6 +31,9 @@ class TriggerManager
         $queue = new SplPriorityQueue();
 
         foreach ($classes as $class => $property) {
+            if ($property->events == ['*']) {
+                $property->events = ['write', 'update', 'delete'];
+            }
             $queue->insert([$class, $property], $property->priority);
         }
 

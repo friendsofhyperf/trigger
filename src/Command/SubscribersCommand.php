@@ -13,12 +13,10 @@ namespace FriendsOfHyperf\Trigger\Command;
 use FriendsOfHyperf\Trigger\Annotation\Subscriber;
 use FriendsOfHyperf\Trigger\Subscriber\SnapshotSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
-use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Psr\Container\ContainerInterface;
 
-#[Command]
 class SubscribersCommand extends HyperfCommand
 {
     protected ?string $signature = 'describe:subscribers {--R|replication= : Replication}';

@@ -43,7 +43,7 @@ class TriggerStopHandler implements SignalHandlerInterface
         foreach ($annotations as $class => $property) {
             $process = $this->container->get($class);
             if ($process instanceof ConsumeProcess) {
-                $process->stop();
+                // todo
             }
         }
     }

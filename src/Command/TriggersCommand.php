@@ -11,15 +11,10 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger\Command;
 
 use FriendsOfHyperf\Trigger\Annotation\Trigger;
-use Hyperf\Command\Annotation\Command;
 use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Psr\Container\ContainerInterface;
 
-/**
- * @Command
- */
-#[Command]
 class TriggersCommand extends HyperfCommand
 {
     protected ?string $signature = 'describe:triggers {--R|replication= : Replication} {--T|table= : Table}';

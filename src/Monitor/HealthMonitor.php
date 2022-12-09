@@ -79,9 +79,9 @@ class HealthMonitor
 
                 if ($this->binLogCurrent instanceof BinLogCurrent) {
                     if (
-                    $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
-                    && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
-                ) {
+                        $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
+                        && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                    ) {
                         $this->r->callOnReplicationStopped($this->binLogCurrent);
                     }
 

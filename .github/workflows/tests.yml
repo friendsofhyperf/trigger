@@ -1,0 +1,54 @@
+name: tests
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      max-parallel: 15
+      matrix:
+        os: [ubuntu-latest]
+        php-version: ["8.0", "8.1", "8.2"]
+    name: PHP ${{ matrix.php-version }} Test on ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          extensions: mbstring, redis, pdo, pdo_mysql, bcmath, swoole
+          tools: phpize
+          coverage: none
+
+      - name: Check PHP Version
+        run: php -v
+
+      - name: Check Composer Version
+        run: composer -V
+
+      - name: Check PHP Extensions
+        run: php -m
+
+      - name: Install Dependencies
+        run: |
+          composer install --dev
+
+      - name: Run Cs Fixer
+        run: |
+          if [ "${{ matrix.php-version }}" == "8.2" ]; then
+            PHP_CS_FIXER_IGNORE_ENV=true ./vendor/bin/php-cs-fixer fix $1 --dry-run --diff --verbose --show-progress=dots
+          else
+            ./vendor/bin/php-cs-fixer fix $1 --dry-run --diff --verbose --show-progress=dots
+          fi
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit 300M -l 0 -c phpstan.neon ./src ./publish
+
+      # - name: Run Test
+      #   run: |
+      #     composer test

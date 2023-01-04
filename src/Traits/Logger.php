@@ -44,6 +44,6 @@ trait Logger
     protected function getLogger(): StdoutLoggerInterface
     {
         /* @phpstan-ignore-next-line */
-        return isset($this->logger) ? $this->logger : ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
+        return isset($this->logger) && $this->logger instanceof StdoutLoggerInterface ? $this->logger : ApplicationContext::getContainer()->get(StdoutLoggerInterface::class);
     }
 }

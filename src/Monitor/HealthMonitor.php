@@ -22,7 +22,7 @@ class HealthMonitor
 {
     use Logger;
 
-    private \MySQLReplication\BinLog\BinLogCurrent $binLogCurrent;
+    private BinLogCurrent $binLogCurrent;
 
     private int $monitorInterval = 10;
 

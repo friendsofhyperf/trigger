@@ -1,6 +1,6 @@
 {
     "name": "friendsofhyperf/trigger",
-    "description": "MySQL Trigger for hyperf.",
+    "description": "The MySQL Trigger component for Hyperf.",
     "type": "library",
     "require": {
         "hyperf/command": "~3.0.0",

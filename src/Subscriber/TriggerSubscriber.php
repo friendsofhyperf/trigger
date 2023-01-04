@@ -72,18 +72,15 @@ class TriggerSubscriber extends AbstractSubscriber
                         return;
                     }
 
-                    switch ($eventType) {
-                        case ConstEventsNames::WRITE:
-                            $args = [$value];
-                            break;
-                        case ConstEventsNames::UPDATE:
-                            $args = [$value['before'], $value['after']];
-                            break;
-                        case ConstEventsNames::DELETE:
-                            $args = [$value];
-                            break;
-                        default:
-                            return;
+                    $args = match ($eventType) {
+                        ConstEventsNames::WRITE => [$value],
+                        ConstEventsNames::UPDATE => [$value['before'], $value['after']],
+                        ConstEventsNames::DELETE => [$value],
+                        default => null,
+                    };
+
+                    if (! $args) {
+                        return;
                     }
 
                     try {

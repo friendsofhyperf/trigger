@@ -14,15 +14,15 @@ use FriendsOfHyperf\Trigger\Contact\TriggerInterface;
 
 abstract class AbstractTrigger implements TriggerInterface
 {
-    public function onWrite(array $new)
+    public function onWrite(array $new): void
     {
     }
 
-    public function onUpdate(array $old, array $new)
+    public function onUpdate(array $old, array $new): void
     {
     }
 
-    public function onDelete(array $old)
+    public function onDelete(array $old): void
     {
     }
 }

@@ -77,6 +77,12 @@ class RedisServerMutex implements ServerMutexInterface
             CoordinatorManager::until($this->getIdentifier())->yield();
 
             $this->timer->tick($this->keepaliveInterval, function () {
+                if ($this->released) {
+                    $this->debug('Server mutex keepalive stopped.');
+
+                    return Timer::STOP;
+                }
+
                 $this->redis->setNx($this->name, $this->owner);
                 $this->redis->expire($this->name, $this->expires);
                 $ttl = $this->redis->ttl($this->name);

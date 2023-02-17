@@ -4,7 +4,7 @@
 [![Total Downloads](https://poser.pugx.org/friendsofhyperf/trigger/d/total.png)](https://packagist.org/packages/friendsofhyperf/trigger)
 [![GitHub license](https://img.shields.io/github/license/friendsofhyperf/trigger)](https://github.com/friendsofhyperf/trigger)
 
-MySQL trigger component for hyperf, Based on a great work of creators：[krowinski/php-mysql-replication](https://github.com/krowinski/php-mysql-replication)
+MySQL trigger component for Hyperf, Based on a great work of creators：[krowinski/php-mysql-replication](https://github.com/krowinski/php-mysql-replication)
 
 ## Installation
 
@@ -17,7 +17,7 @@ composer require "friendsofhyperf/trigger"
 - Publish
 
 ```bash
-php bin/hyperf.php vendor:publish friendsofhyperf/trigger
+php bin/hyperf.php vendor:publish friendsofhyperf/trigger:^4.0
 ```
 
 ## Define a trigger
@@ -29,8 +29,8 @@ use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use FriendsOfHyperf\Trigger\Trigger\AbstractTrigger;
 use MySQLReplication\Event\DTO\EventDTO;
 
-#[Trigger(table:"table", on:"*", replication:"default")]
-class SomeTableTrigger extends AbstractTrigger
+#[Trigger(table:"table", on:"*", pool:"default")]
+class FooTrigger extends AbstractTrigger
 {
     public function onWrite(array $new)
     {
@@ -58,52 +58,12 @@ use FriendsOfHyperf\Trigger\Annotation\Subscriber;
 use FriendsOfHyperf\Trigger\Subscriber\AbstractEventSubscriber;
 use MySQLReplication\Event\DTO\EventDTO;
 
-#[Subscriber(replication:"default")]
-class DemoSubscriber extends AbstractEventSubscriber
+#[Subscriber(pool:"default")]
+class BarSubscriber extends AbstractEventSubscriber
 {
     protected function allEvents(EventDTO $event): void
     {
         // some code
     }
 }
-```
-
-## Setup Process
-
-- Default
-
-```php
-namespace App\Process;
-
-use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
-use Hyperf\Process\Annotation\Process;
-
-#[Process]
-class TriggerProcess extends ConsumeProcess
-{
-}
-```
-
-- Custom replication
-
-```php
-namespace App\Process;
-
-use FriendsOfHyperf\Trigger\Process\ConsumeProcess;
-use Hyperf\Process\Annotation\Process;
-
-#[Process]
-class CustomProcess extends ConsumeProcess
-{
-    protected $replication = 'custom_replication';
-}
-```
-
-## Signal
-
-```php
-// config/autoload/signal.php
-return [
-    FriendsOfHyperf\Trigger\Handler\TriggerStopHandler::class => PHP_INT_MAX,
-];
 ```

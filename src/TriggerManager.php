@@ -42,7 +42,7 @@ class TriggerManager
 
             /** @var Trigger $property */
             foreach ($property->events as $eventType) {
-                $config = $this->config->get('trigger.' . $property->pool);
+                $config = $this->config->get('trigger.pools.' . $property->pool);
                 $property->table ??= class_basename($class);
                 $property->database ??= $config['databases_only'][0] ?? '';
 

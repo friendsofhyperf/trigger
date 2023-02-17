@@ -25,7 +25,7 @@ class ReplicationManager
 
     public function run()
     {
-        $pools = $this->config->get('trigger', []);
+        $pools = $this->config->get('trigger.pools', []);
 
         foreach ($pools as $pool => $options) {
             $replication = make(Replication::class, [

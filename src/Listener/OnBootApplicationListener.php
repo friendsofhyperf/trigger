@@ -16,7 +16,7 @@ use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Event\Contract\ListenerInterface;
 use Hyperf\Framework\Event\BootApplication;
 
-class RegisterSubscriberAndTriggerListener implements ListenerInterface
+class OnBootApplicationListener implements ListenerInterface
 {
     public function __construct(
         protected SubscriberManager $subscriberManager,

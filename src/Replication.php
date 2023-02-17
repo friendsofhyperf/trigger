@@ -66,46 +66,6 @@ class Replication
         }
     }
 
-    public function getHealthMonitor(): ?HealthMonitor
-    {
-        return $this->healthMonitor;
-    }
-
-    public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
-    {
-        return $this->binLogCurrentSnapshot;
-    }
-
-    public function getName(): string
-    {
-        return $this->name ?? 'trigger-' . $this->pool;
-    }
-
-    public function getPool(): string
-    {
-        return $this->pool;
-    }
-
-    public function getOption(?string $key = null, $default = null)
-    {
-        if (is_null($key)) {
-            return $this->options;
-        }
-
-        return Arr::get($this->options, $key, $default);
-    }
-
-    public function stop(): void
-    {
-        $this->stopped = true;
-        $this->serverMutex?->release();
-    }
-
-    public function isStopped(): bool
-    {
-        return $this->stopped;
-    }
-
     public function start(): void
     {
         $callback = function () {
@@ -146,9 +106,49 @@ class Replication
         }
     }
 
+    public function getBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
+    {
+        return $this->binLogCurrentSnapshot;
+    }
+
+    public function getHealthMonitor(): ?HealthMonitor
+    {
+        return $this->healthMonitor;
+    }
+
+    public function getName(): string
+    {
+        return $this->name ?? 'trigger-' . $this->pool;
+    }
+
+    public function getOption(?string $key = null, $default = null)
+    {
+        if (is_null($key)) {
+            return $this->options;
+        }
+
+        return Arr::get($this->options, $key, $default);
+    }
+
+    public function getPool(): string
+    {
+        return $this->pool;
+    }
+
     public function getIdentifier(): string
     {
         return sprintf('%s_start', $this->pool);
+    }
+
+    public function stop(): void
+    {
+        $this->stopped = true;
+        $this->serverMutex?->release();
+    }
+
+    public function isStopped(): bool
+    {
+        return $this->stopped;
     }
 
     protected function makeReplication(): MySQLReplicationFactory

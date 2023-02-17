@@ -28,12 +28,6 @@ class SubscribersCommand extends HyperfCommand
         parent::__construct();
     }
 
-    public function configure()
-    {
-        parent::configure();
-        $this->setDescription($this->description);
-    }
-
     public function handle()
     {
         $subscribers = AnnotationCollector::getClassesByAnnotation(Subscriber::class);

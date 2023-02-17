@@ -12,7 +12,7 @@ namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Command\SubscribersCommand;
 use FriendsOfHyperf\Trigger\Command\TriggersCommand;
-use FriendsOfHyperf\Trigger\Listener\RegisterSubscriberAndTriggerListener;
+use FriendsOfHyperf\Trigger\Listener\OnBootApplicationListener;
 use FriendsOfHyperf\Trigger\Mutex\RedisServerMutex;
 use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
@@ -34,7 +34,7 @@ class ConfigProvider
                 TriggersCommand::class,
             ],
             'listeners' => [
-                RegisterSubscriberAndTriggerListener::class,
+                OnBootApplicationListener::class,
             ],
             'publish' => [
                 [

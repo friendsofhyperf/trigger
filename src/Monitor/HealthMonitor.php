@@ -52,10 +52,10 @@ class HealthMonitor
 
     public function process(): void
     {
-        // Monitor binLogCurrent
         Coroutine::create(function () {
             CoordinatorManager::until($this->replication->getIdentifier())->yield();
 
+            // Monitor binLogCurrent
             $this->timer->tick($this->monitorInterval, function () {
                 if ($this->binLogCurrent instanceof BinLogCurrent) {
                     $this->debug(
@@ -66,12 +66,8 @@ class HealthMonitor
                     );
                 }
             });
-        });
 
-        // Health check and set snapshot
-        Coroutine::create(function () {
-            CoordinatorManager::until($this->replication->getIdentifier())->yield();
-
+            // Health check and set snapshot
             $this->timer->tick($this->snapShortInterval, function () {
                 if (! $this->binLogCurrent instanceof BinLogCurrent) {
                     return;

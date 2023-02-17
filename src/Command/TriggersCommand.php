@@ -17,7 +17,7 @@ use Psr\Container\ContainerInterface;
 
 class TriggersCommand extends HyperfCommand
 {
-    protected ?string $signature = 'describe:triggers {--R|replication= : Replication} {--T|table= : Table}';
+    protected ?string $signature = 'describe:triggers {--P|pool= : Pool} {--T|table= : Table}';
 
     protected string $description = 'List all triggers.';
 
@@ -43,8 +43,8 @@ class TriggersCommand extends HyperfCommand
             })
             ->filter(function ($property, $class) {
                 /* @var Trigger $property */
-                if ($this->input->getOption('replication')) {
-                    return $this->input->getOption('replication') == $property->replication;
+                if ($this->input->getOption('pool')) {
+                    return $this->input->getOption('pool') == $property->pool;
                 }
                 return true;
             })
@@ -55,9 +55,9 @@ class TriggersCommand extends HyperfCommand
                 }
                 return true;
             })
-            ->transform(fn ($property, $class) => [$property->replication, $property->database, $property->table, implode(',', $property->events), $class, $property->priority]);
+            ->transform(fn ($property, $class) => [$property->pool, $property->database, $property->table, implode(',', $property->events), $class, $property->priority]);
 
         $this->info('Triggers:');
-        $this->table(['Replication', 'Database', 'Table', 'Events', 'Trigger', 'Priority'], $rows);
+        $this->table(['Pool', 'Database', 'Table', 'Events', 'Trigger', 'Priority'], $rows);
     }
 }

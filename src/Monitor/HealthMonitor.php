@@ -10,50 +10,53 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Monitor;
 
+use FriendsOfHyperf\Trigger\Event\OnReplicationStop;
 use FriendsOfHyperf\Trigger\Replication;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
-use Hyperf\Coordinator\Constants;
+use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Coordinator\CoordinatorManager;
+use Hyperf\Coordinator\Timer;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
+use Psr\Container\ContainerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 
 class HealthMonitor
 {
     use Logger;
 
-    private BinLogCurrent $binLogCurrent;
+    protected BinLogCurrent $binLogCurrent;
 
-    private int $monitorInterval = 10;
+    protected int $monitorInterval = 10;
 
-    private int $snapShortInterval = 10;
+    protected int $snapShortInterval = 10;
 
-    private string $replication;
+    protected string $pool;
 
-    private BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
+    protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
-    public function __construct(private Replication $r)
+    protected Timer $timer;
+
+    protected StdoutLoggerInterface $logger;
+
+    public function __construct(protected ContainerInterface $container, protected Replication $replication)
     {
-        $this->replication = $r->getReplication();
-        $this->monitorInterval = (int) $r->getOption('health_monitor.interval', 10);
-        $this->snapShortInterval = (int) $r->getOption('snapshot.interval', 10);
-        $this->binLogCurrentSnapshot = $r->getBinLogCurrentSnapshot();
+        $this->pool = $replication->getPool();
+        $this->monitorInterval = (int) $replication->getOption('health_monitor.interval', 10);
+        $this->snapShortInterval = (int) $replication->getOption('snapshot.interval', 10);
+        $this->binLogCurrentSnapshot = $replication->getBinLogCurrentSnapshot();
+        $this->logger = $this->container->get(StdoutLoggerInterface::class);
+        $this->timer = new Timer($this->logger);
     }
 
     public function process(): void
     {
         // Monitor binLogCurrent
         Coroutine::create(function () {
-            CoordinatorManager::until($this->r->getIdentifier())->yield();
+            CoordinatorManager::until($this->replication->getIdentifier())->yield();
 
-            while (true) {
-                $isExited = CoordinatorManager::until(Constants::WORKER_EXIT)->yield($this->monitorInterval);
-
-                if ($isExited) {
-                    $this->warning('Process stopped.');
-                    break;
-                }
-
+            $this->timer->tick($this->monitorInterval, function () {
                 if ($this->binLogCurrent instanceof BinLogCurrent) {
                     $this->debug(
                         sprintf(
@@ -62,32 +65,27 @@ class HealthMonitor
                         )
                     );
                 }
-            }
+            });
         });
 
         // Health check and set snapshot
         Coroutine::create(function () {
-            CoordinatorManager::until($this->r->getIdentifier())->yield();
+            CoordinatorManager::until($this->replication->getIdentifier())->yield();
 
-            while (true) {
-                $isExited = CoordinatorManager::until(Constants::WORKER_EXIT)->yield($this->snapShortInterval);
-
-                if ($isExited) {
-                    $this->warning('Process stopped.');
-                    break;
+            $this->timer->tick($this->snapShortInterval, function () {
+                if (! $this->binLogCurrent instanceof BinLogCurrent) {
+                    return;
                 }
 
-                if ($this->binLogCurrent instanceof BinLogCurrent) {
-                    if (
-                        $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
-                        && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
-                    ) {
-                        $this->r->callOnReplicationStopped($this->binLogCurrent);
-                    }
-
-                    $this->binLogCurrentSnapshot->set($this->binLogCurrent);
+                if (
+                    $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
+                    && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                ) {
+                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->pool, $this->binLogCurrent));
                 }
-            }
+
+                $this->binLogCurrentSnapshot->set($this->binLogCurrent);
+            });
         });
     }
 

@@ -13,15 +13,18 @@ namespace FriendsOfHyperf\Trigger\Mutex;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\Util;
 use Hyperf\Contract\StdoutLoggerInterface;
-use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
+use Hyperf\Coordinator\Timer;
 use Hyperf\Redis\Redis;
 use Hyperf\Utils\Coroutine;
+use RedisException;
 use Throwable;
 
 class RedisServerMutex implements ServerMutexInterface
 {
     use Logger;
+
+    protected Timer $timer;
 
     private bool $released = false;
 
@@ -33,7 +36,7 @@ class RedisServerMutex implements ServerMutexInterface
 
     private int $retryInterval = 10;
 
-    private string $replication = 'default';
+    private string $pool = 'default';
 
     public function __construct(
         protected StdoutLoggerInterface $logger,
@@ -45,45 +48,44 @@ class RedisServerMutex implements ServerMutexInterface
         $this->expires = (int) $options['expires'] ?? 60;
         $this->retryInterval = (int) $options['retry_interval'] ?? 10;
         $this->keepaliveInterval = (int) $options['keepalive_interval'] ?? 10;
-        $this->replication = $options['replication'];
+        $this->pool = $options['pool'];
         $this->owner = $owner ?? Util::getInternalIp();
+        $this->timer = new Timer($logger);
     }
 
     public function attempt(callable $callback = null): void
     {
+        // Waiting for the server mutex.
         Coroutine::create(function () {
-            while (true) {
-                if ($this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires]) || $this->redis->get($this->name) == $this->owner) {
+            $this->timer->tick($this->retryInterval, function () {
+                if (
+                    $this->redis->set($this->name, $this->owner, ['NX', 'EX' => $this->expires])
+                    || $this->redis->get($this->name) == $this->owner
+                ) {
                     $this->debug('Got server mutex.');
                     CoordinatorManager::until($this->getIdentifier())->resume();
-                    break;
+
+                    return Timer::STOP;
                 }
 
                 $this->debug('Waiting server mutex.');
-
-                sleep($this->retryInterval);
-            }
+            });
         });
 
+        // Keepalive the server mutex.
         Coroutine::create(function () {
             CoordinatorManager::until($this->getIdentifier())->yield();
 
-            while (true) {
-                $isExited = CoordinatorManager::until(Constants::WORKER_EXIT)->yield($this->keepaliveInterval);
-
-                if ($isExited) {
-                    $this->warning('Server mutex exited.');
-                    break;
-                }
-
+            $this->timer->tick($this->keepaliveInterval, function () {
                 $this->redis->setNx($this->name, $this->owner);
                 $this->redis->expire($this->name, $this->expires);
                 $ttl = $this->redis->ttl($this->name);
 
                 $this->debug('Server mutex keepalive executed', ['ttl' => $ttl]);
-            }
+            });
         });
 
+        // Waiting for the server mutex.
         CoordinatorManager::until($this->getIdentifier())->yield();
 
         $this->debug('Server mutex keepalive booted.');
@@ -92,11 +94,15 @@ class RedisServerMutex implements ServerMutexInterface
             try {
                 $callback();
             } catch (Throwable $e) {
-                $this->debug($e->getMessage(), ['position' => $e->getFile() . ':' . $e->getLine()]);
+                $this->error($e->getMessage(), ['position' => $e->getFile() . ':' . $e->getLine()]);
             }
         }
     }
 
+    /**
+     * Release the server mutex.
+     * @throws RedisException
+     */
     public function release(bool $force = false): void
     {
         if ($force || $this->redis->get($this->name) == $this->owner) {
@@ -107,6 +113,6 @@ class RedisServerMutex implements ServerMutexInterface
 
     protected function getIdentifier(): string
     {
-        return sprintf('%s_%s', $this->replication, __CLASS__);
+        return sprintf('%s_%s', $this->pool, __CLASS__);
     }
 }

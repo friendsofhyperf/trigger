@@ -16,7 +16,7 @@ use Hyperf\Di\Annotation\AbstractAnnotation;
 #[Attribute(Attribute::TARGET_CLASS)]
 class Subscriber extends AbstractAnnotation
 {
-    public function __construct(public string $replication = 'default', public int $priority = 0)
+    public function __construct(public string $pool = 'default', public int $priority = 0)
     {
     }
 }

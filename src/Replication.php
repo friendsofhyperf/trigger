@@ -21,7 +21,6 @@ use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Utils\Arr;
 use Hyperf\Utils\Coroutine;
-use MySQLReplication\BinLog\BinLogCurrent;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
 
@@ -29,9 +28,7 @@ class Replication
 {
     use Logger;
 
-    private string $replication;
-
-    private array $options;
+    protected ?string $name;
 
     private ?HealthMonitor $healthMonitor;
 
@@ -45,30 +42,28 @@ class Replication
         protected subscriberManager $subscriberManager,
         protected TriggerManager $triggerManager,
         protected StdoutLoggerInterface $logger,
-        string $replication,
-        array $options = []
+        protected string $pool = 'default',
+        protected array $options = []
     ) {
-        $this->replication = $replication;
-        $this->options = $options;
+        if (isset($options['name'])) {
+            $this->name = $options['name'];
+        }
 
-        $this->makeBinLogCurrentSnapshot();
+        $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
+            'replication' => $this,
+        ]);
 
         if ($this->getOption('server_mutex.enable', true)) {
-            $this->serverMutex = $this->makeServerMutex();
+            $this->serverMutex = make(ServerMutexInterface::class, [
+                'name' => 'trigger:mutex:' . $this->pool,
+                'owner' => Util::getInternalIp(),
+                'options' => $this->getOption('server_mutex', []) + ['pool' => $this->pool],
+            ]);
         }
 
         if ($this->getOption('health_monitor.enable', true)) {
-            $this->healthMonitor = $this->makeHealthMonitor();
+            $this->healthMonitor = make(HealthMonitor::class, ['replication' => $this]);
         }
-    }
-
-    public function getOption(?string $key = null, $default = null)
-    {
-        if (is_null($key)) {
-            return $this->options;
-        }
-
-        return Arr::get($this->options, $key, $default);
     }
 
     public function getHealthMonitor(): ?HealthMonitor
@@ -81,28 +76,34 @@ class Replication
         return $this->binLogCurrentSnapshot;
     }
 
-    public function getReplication(): string
+    public function getName(): string
     {
-        return $this->replication;
+        return $this->name ?? 'trigger-' . $this->pool;
+    }
+
+    public function getPool(): string
+    {
+        return $this->pool;
+    }
+
+    public function getOption(?string $key = null, $default = null)
+    {
+        if (is_null($key)) {
+            return $this->options;
+        }
+
+        return Arr::get($this->options, $key, $default);
     }
 
     public function stop(): void
     {
         $this->stopped = true;
-
-        if ($this->serverMutex) {
-            $this->serverMutex->release();
-        }
+        $this->serverMutex?->release();
     }
 
     public function isStopped(): bool
     {
         return $this->stopped;
-    }
-
-    public function callOnReplicationStopped($binLogCurrent)
-    {
-        $this->onReplicationStopped($binLogCurrent);
     }
 
     public function start(): void
@@ -147,50 +148,37 @@ class Replication
 
     public function getIdentifier(): string
     {
-        return sprintf('%s_start', $this->replication);
-    }
-
-    protected function makeHealthMonitor(): HealthMonitor
-    {
-        return make(HealthMonitor::class, ['replication' => $this]);
-    }
-
-    protected function makeServerMutex(): ServerMutexInterface
-    {
-        return make(ServerMutexInterface::class, [
-            'name' => 'trigger:mutex:' . $this->replication,
-            'owner' => Util::getInternalIp(),
-            'options' => $this->getOption('server_mutex', []) + ['replication' => $this->replication],
-        ]);
+        return sprintf('%s_start', $this->pool);
     }
 
     protected function makeReplication(): MySQLReplicationFactory
     {
-        $replication = $this->replication;
+        $pool = $this->pool;
         // Get options
         $config = (array) $this->options;
         // Get databases of replication
-        $databasesOnly = array_merge(
+        $databasesOnly = array_replace(
             $config['databases_only'] ?? [],
-            $this->triggerManager->getDatabases($replication)
+            $this->triggerManager->getDatabases($pool)
         );
         // Get tables of replication
-        $tablesOnly = array_merge(
+        $tablesOnly = array_replace(
             $config['tables_only'] ?? [],
-            $this->triggerManager->getTables($replication)
+            $this->triggerManager->getTables($pool)
         );
 
         /** @var ConfigBuilder */
-        $configBuilder = tap(new ConfigBuilder(), function (ConfigBuilder $builder) use ($config, $databasesOnly, $tablesOnly) {
-            $builder->withUser($config['user'] ?? 'root')
+        $configBuilder = tap(
+            new ConfigBuilder(),
+            fn (ConfigBuilder $builder) => $builder->withUser($config['user'] ?? 'root')
                 ->withHost($config['host'] ?? '127.0.0.1')
                 ->withPassword($config['password'] ?? 'root')
                 ->withPort((int) $config['port'] ?? 3306)
                 ->withSlaveId(random_int(100, 999))
                 ->withHeartbeatPeriod((float) $config['heartbeat_period'] ?? 3)
                 ->withDatabasesOnly($databasesOnly)
-                ->withTablesOnly($tablesOnly);
-        });
+                ->withTablesOnly($tablesOnly)
+        );
 
         if ($binLogCurrent = $this->getBinLogCurrentSnapshot()->get()) {
             $configBuilder->withBinLogFileName($binLogCurrent->getBinFileName());
@@ -204,9 +192,9 @@ class Replication
         return tap(make(MySQLReplicationFactory::class, [
             'config' => $configBuilder->build(),
             'eventDispatcher' => $eventDispatcher,
-        ]), function ($factory) use ($replication) {
+        ]), function ($factory) use ($pool) {
             /** @var MySQLReplicationFactory $factory */
-            $subscribers = $this->subscriberManager->get($replication);
+            $subscribers = $this->subscriberManager->get($pool);
             $subscribers[] = TriggerSubscriber::class;
             $subscribers[] = SnapshotSubscriber::class;
 
@@ -214,17 +202,5 @@ class Replication
                 $factory->registerSubscriber(make($subscriber, ['replication' => $this]));
             }
         });
-    }
-
-    protected function makeBinLogCurrentSnapshot(): BinLogCurrentSnapshotInterface
-    {
-        return make(BinLogCurrentSnapshotInterface::class, [
-            'replication' => $this,
-        ]);
-    }
-
-    protected function onReplicationStopped(?BinLogCurrent $binLogCurrent): void
-    {
-        $this->warning('Replication stopped.');
     }
 }

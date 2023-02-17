@@ -18,9 +18,9 @@ use SplPriorityQueue;
 
 class TriggerManager
 {
-    private array $triggers = [];
+    protected array $triggers = [];
 
-    public function __construct(private ConfigInterface $config)
+    public function __construct(protected ConfigInterface $config)
     {
     }
 
@@ -42,11 +42,11 @@ class TriggerManager
 
             /** @var Trigger $property */
             foreach ($property->events as $eventType) {
-                $config = $this->config->get('trigger.' . $property->replication);
+                $config = $this->config->get('trigger.' . $property->pool);
                 $property->table ??= class_basename($class);
                 $property->database ??= $config['databases_only'][0] ?? '';
 
-                $key = $this->buildKey($property->replication, $property->database, $property->table, $eventType);
+                $key = $this->buildKey($property->pool, $property->database, $property->table, $eventType);
                 $method = 'on' . ucfirst($eventType);
 
                 $items = Arr::get($this->triggers, $key, []);
@@ -62,17 +62,17 @@ class TriggerManager
         return Arr::get($this->triggers, $key, []);
     }
 
-    public function getDatabases(string $replication): array
+    public function getDatabases(string $pool): array
     {
-        return array_keys($this->get($replication));
+        return array_keys($this->get($pool));
     }
 
-    public function getTables(string $replication): array
+    public function getTables(string $pool): array
     {
         $tables = [];
 
-        foreach ($this->getDatabases($replication) as $database) {
-            $tables = [...$tables, ...array_keys($this->get($this->buildKey($replication, $database)))];
+        foreach ($this->getDatabases($pool) as $database) {
+            $tables = [...$tables, ...array_keys($this->get($this->buildKey($pool, $database)))];
         }
 
         return $tables;

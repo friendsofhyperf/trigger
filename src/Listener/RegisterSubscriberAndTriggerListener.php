@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Listener;
 
+use FriendsOfHyperf\Trigger\ReplicationManager;
 use FriendsOfHyperf\Trigger\SubscriberManager;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Event\Contract\ListenerInterface;
@@ -17,8 +18,11 @@ use Hyperf\Framework\Event\BootApplication;
 
 class RegisterSubscriberAndTriggerListener implements ListenerInterface
 {
-    public function __construct(protected SubscriberManager $subscriberManager, protected TriggerManager $triggerManager)
-    {
+    public function __construct(
+        protected SubscriberManager $subscriberManager,
+        protected TriggerManager $triggerManager,
+        protected ReplicationManager $replicationManager
+    ) {
     }
 
     public function listen(): array
@@ -35,5 +39,6 @@ class RegisterSubscriberAndTriggerListener implements ListenerInterface
     {
         $this->subscriberManager->register();
         $this->triggerManager->register();
+        $this->replicationManager->run();
     }
 }

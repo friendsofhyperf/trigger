@@ -8,9 +8,13 @@ declare(strict_types=1);
  * @document https://github.com/friendsofhyperf/trigger/blob/main/README.md
  * @contact  huangdijia@gmail.com
  */
-namespace PHPSTORM_META {
-    // Reflect
-    override(\Psr\Container\ContainerInterface::get(0), map(['' => '@']));
-    override(\Hyperf\Context\Context::get(0), map(['' => '@']));
-    override(\make(0), map(['' => '@']));
+namespace FriendsOfHyperf\Trigger\Event;
+
+use MySQLReplication\BinLog\BinLogCurrent;
+
+class OnReplicationStop
+{
+    public function __construct(public string $pool, public ?BinLogCurrent $binLogCurrent = null)
+    {
+    }
 }

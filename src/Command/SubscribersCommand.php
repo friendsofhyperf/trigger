@@ -19,7 +19,7 @@ use Psr\Container\ContainerInterface;
 
 class SubscribersCommand extends HyperfCommand
 {
-    protected ?string $signature = 'describe:subscribers {--R|replication= : Replication}';
+    protected ?string $signature = 'describe:subscribers {--P|poll= : Pool}';
 
     protected string $description = 'List all subscribers.';
 
@@ -39,18 +39,18 @@ class SubscribersCommand extends HyperfCommand
         $subscribers = AnnotationCollector::getClassesByAnnotation(Subscriber::class);
         $rows = collect($subscribers)
             ->filter(function ($property, $class) {
-                if ($this->input->getOption('replication')) {
-                    return $this->input->getOption('replication') == $property->replication;
+                if ($this->input->getOption('pool')) {
+                    return $this->input->getOption('pool') == $property->pool;
                 }
                 return true;
             })
-            ->transform(fn ($property, $class) => [$property->replication, $class, $property->priority])
+            ->transform(fn ($property, $class) => [$property->pool, $class, $property->priority])
             ->merge([
                 ['[default]', SnapshotSubscriber::class, 1],
                 ['[default]', TriggerSubscriber::class, 1],
             ]);
 
         $this->info('Subscribers:');
-        $this->table(['Replication', 'Subscriber', 'Priority'], $rows);
+        $this->table(['Pool', 'Subscriber', 'Priority'], $rows);
     }
 }

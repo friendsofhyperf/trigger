@@ -11,13 +11,13 @@ MySQL trigger component for Hyperf, Based on a great work of creators：[moln/ph
 - Request
 
 ```bash
-composer require "friendsofhyperf/trigger"
+composer require "friendsofhyperf/trigger:^4.0"
 ```
 
 - Publish
 
 ```bash
-php bin/hyperf.php vendor:publish friendsofhyperf/trigger:^4.0
+php bin/hyperf.php vendor:publish friendsofhyperf/trigger
 ```
 
 ## Define a trigger

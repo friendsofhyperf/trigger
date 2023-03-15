@@ -195,15 +195,15 @@ class Consumer
                 'eventDispatcher' => $eventDispatcher,
             ]),
             function ($factory) use ($connection) {
-            /** @var MySQLReplicationFactory $factory */
-            $subscribers = $this->subscriberManager->get($connection);
-            $subscribers[] = TriggerSubscriber::class;
-            $subscribers[] = SnapshotSubscriber::class;
+                /** @var MySQLReplicationFactory $factory */
+                $subscribers = $this->subscriberManager->get($connection);
+                $subscribers[] = TriggerSubscriber::class;
+                $subscribers[] = SnapshotSubscriber::class;
 
-            foreach ($subscribers as $subscriber) {
-                $factory->registerSubscriber(make($subscriber, ['consumer' => $this]));
+                foreach ($subscribers as $subscriber) {
+                    $factory->registerSubscriber(make($subscriber, ['consumer' => $this]));
+                }
             }
-        }
         );
     }
 }

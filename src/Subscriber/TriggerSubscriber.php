@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use FriendsOfHyperf\Trigger\Replication;
+use FriendsOfHyperf\Trigger\Consumer;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -31,10 +31,10 @@ class TriggerSubscriber extends AbstractSubscriber
         protected ContainerInterface $container,
         protected TriggerManager $triggerManager,
         protected StdoutLoggerInterface $logger,
-        protected Replication $replication
+        protected Consumer $consumer
     ) {
         $this->concurrent = new Concurrent(
-            (int) $replication->getOption('concurrent.limit') ?? 1000
+            (int) $consumer->getOption('concurrent.limit') ?? 1000
         );
     }
 
@@ -54,7 +54,7 @@ class TriggerSubscriber extends AbstractSubscriber
         }
 
         $key = join('.', [
-            $this->replication->getPool(),
+            $this->consumer->getPool(),
             $event->getTableMap()->getDatabase(),
             $event->getTableMap()->getTable(),
             $event->getType(),

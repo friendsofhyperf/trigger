@@ -15,7 +15,7 @@ use Hyperf\Process\AbstractProcess;
 use Hyperf\Process\ProcessManager;
 use Psr\Container\ContainerInterface;
 
-class ReplicationManager
+class ConsumerManager
 {
     public function __construct(
         protected ContainerInterface $container,
@@ -28,27 +28,27 @@ class ReplicationManager
         $pools = $this->config->get('trigger.pools', []);
 
         foreach ($pools as $pool => $options) {
-            $replication = make(Replication::class, [
+            $consumer = make(Consumer::class, [
                 'pool' => $pool,
                 'options' => (array) $options,
             ]);
-            $process = $this->createProcess($replication);
-            $process->name = $replication->getName();
+            $process = $this->createProcess($consumer);
+            $process->name = $consumer->getName();
             $process->nums = 1;
             ProcessManager::register($process);
         }
     }
 
-    protected function createProcess(Replication $replication): AbstractProcess
+    protected function createProcess(Consumer $consumer): AbstractProcess
     {
-        return new class($replication) extends AbstractProcess {
-            public function __construct(protected Replication $replication)
+        return new class($consumer) extends AbstractProcess {
+            public function __construct(protected Consumer $consumer)
             {
             }
 
             public function handle(): void
             {
-                $this->replication->start();
+                $this->consumer->start();
             }
         };
     }

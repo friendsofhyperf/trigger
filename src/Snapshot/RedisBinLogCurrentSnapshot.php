@@ -10,14 +10,14 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Snapshot;
 
-use FriendsOfHyperf\Trigger\Replication;
+use FriendsOfHyperf\Trigger\Consumer;
 use Hyperf\Redis\Redis;
 use MySQLReplication\BinLog\BinLogCurrent;
 
 class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 {
     public function __construct(
-        private Replication $replication,
+        private Consumer $consumer,
         private Redis $redis
     ) {
     }
@@ -25,7 +25,7 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
     public function set(BinLogCurrent $binLogCurrent): void
     {
         $this->redis->set($this->key(), serialize($binLogCurrent));
-        $this->redis->expire($this->key(), (int) $this->replication->getOption('snapshot.expires', 24 * 3600));
+        $this->redis->expire($this->key(), (int) $this->consumer->getOption('snapshot.expires', 24 * 3600));
     }
 
     public function get(): ?BinLogCurrent
@@ -47,8 +47,8 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
             'trigger',
             'snapshot',
             'binLogCurrent',
-            $this->replication->getOption('snapshot.version', '1.0'),
-            $this->replication->getPool(),
+            $this->consumer->getOption('snapshot.version', '1.0'),
+            $this->consumer->getPool(),
         ]);
     }
 }

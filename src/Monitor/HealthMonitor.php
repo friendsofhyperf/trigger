@@ -10,8 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Monitor;
 
+use FriendsOfHyperf\Trigger\Consumer;
 use FriendsOfHyperf\Trigger\Event\OnReplicationStop;
-use FriendsOfHyperf\Trigger\Replication;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -40,12 +40,12 @@ class HealthMonitor
 
     protected StdoutLoggerInterface $logger;
 
-    public function __construct(protected ContainerInterface $container, protected Replication $replication)
+    public function __construct(protected ContainerInterface $container, protected Consumer $consumer)
     {
-        $this->pool = $replication->getPool();
-        $this->monitorInterval = (int) $replication->getOption('health_monitor.interval', 10);
-        $this->snapShortInterval = (int) $replication->getOption('snapshot.interval', 10);
-        $this->binLogCurrentSnapshot = $replication->getBinLogCurrentSnapshot();
+        $this->pool = $consumer->getPool();
+        $this->monitorInterval = (int) $consumer->getOption('health_monitor.interval', 10);
+        $this->snapShortInterval = (int) $consumer->getOption('snapshot.interval', 10);
+        $this->binLogCurrentSnapshot = $consumer->getBinLogCurrentSnapshot();
         $this->logger = $this->container->get(StdoutLoggerInterface::class);
         $this->timer = new Timer($this->logger);
     }
@@ -53,7 +53,7 @@ class HealthMonitor
     public function process(): void
     {
         Coroutine::create(function () {
-            CoordinatorManager::until($this->replication->getIdentifier())->yield();
+            CoordinatorManager::until($this->consumer->getIdentifier())->yield();
 
             // Monitor binLogCurrent
             $this->timer->tick($this->monitorInterval, function () {

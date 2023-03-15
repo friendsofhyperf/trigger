@@ -10,21 +10,21 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use FriendsOfHyperf\Trigger\Replication;
+use FriendsOfHyperf\Trigger\Consumer;
 use MySQLReplication\Event\DTO\EventDTO;
 
 class SnapshotSubscriber extends AbstractSubscriber
 {
-    public function __construct(protected Replication $replication)
+    public function __construct(protected Consumer $consumer)
     {
     }
 
     protected function allEvents(EventDTO $event): void
     {
-        if (! $this->replication->getHealthMonitor()) {
+        if (! $this->consumer->getHealthMonitor()) {
             return;
         }
 
-        $this->replication->getHealthMonitor()->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
+        $this->consumer->getHealthMonitor()->setBinLogCurrent($event->getEventInfo()->getBinLogCurrent());
     }
 }

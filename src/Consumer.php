@@ -24,7 +24,7 @@ use Hyperf\Utils\Coroutine;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
 
-class Replication
+class Consumer
 {
     use Logger;
 
@@ -50,7 +50,7 @@ class Replication
         }
 
         $this->binLogCurrentSnapshot = make(BinLogCurrentSnapshotInterface::class, [
-            'replication' => $this,
+            'consumer' => $this,
         ]);
 
         if ($this->getOption('server_mutex.enable', true)) {
@@ -62,7 +62,7 @@ class Replication
         }
 
         if ($this->getOption('health_monitor.enable', true)) {
-            $this->healthMonitor = make(HealthMonitor::class, ['replication' => $this]);
+            $this->healthMonitor = make(HealthMonitor::class, ['consumer' => $this]);
         }
     }
 
@@ -199,7 +199,7 @@ class Replication
             $subscribers[] = SnapshotSubscriber::class;
 
             foreach ($subscribers as $subscriber) {
-                $factory->registerSubscriber(make($subscriber, ['replication' => $this]));
+                $factory->registerSubscriber(make($subscriber, ['consumer' => $this]));
             }
         });
     }

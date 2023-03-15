@@ -48,7 +48,7 @@ class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
             'snapshot',
             'binLogCurrent',
             $this->consumer->getOption('snapshot.version', '1.0'),
-            $this->consumer->getconnection(),
+            $this->consumer->getConnection(),
         ]);
     }
 }

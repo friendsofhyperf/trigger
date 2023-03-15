@@ -130,7 +130,7 @@ class Consumer
         return Arr::get($this->options, $key, $default);
     }
 
-    public function getconnection(): string
+    public function getConnection(): string
     {
         return $this->connection;
     }

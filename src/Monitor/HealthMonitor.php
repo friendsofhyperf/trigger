@@ -42,7 +42,7 @@ class HealthMonitor
 
     public function __construct(protected ContainerInterface $container, protected Consumer $consumer)
     {
-        $this->connection = $consumer->getconnection();
+        $this->connection = $consumer->getConnection();
         $this->monitorInterval = (int) $consumer->getOption('health_monitor.interval', 10);
         $this->snapShortInterval = (int) $consumer->getOption('snapshot.interval', 10);
         $this->binLogCurrentSnapshot = $consumer->getBinLogCurrentSnapshot();

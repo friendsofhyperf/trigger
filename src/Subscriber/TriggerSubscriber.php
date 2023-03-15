@@ -54,7 +54,7 @@ class TriggerSubscriber extends AbstractSubscriber
         }
 
         $key = join('.', [
-            $this->consumer->getconnection(),
+            $this->consumer->getConnection(),
             $event->getTableMap()->getDatabase(),
             $event->getTableMap()->getTable(),
             $event->getType(),

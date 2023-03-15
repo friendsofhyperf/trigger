@@ -47,9 +47,10 @@ class ConsumerManager
 
     protected function createProcess(Consumer $consumer): AbstractProcess
     {
-        return new class($consumer) extends AbstractProcess {
-            public function __construct(protected Consumer $consumer)
+        return new class($this->container, $consumer) extends AbstractProcess {
+            public function __construct(ContainerInterface $container, protected Consumer $consumer)
             {
+                parent::__construct($container);
             }
 
             public function handle(): void

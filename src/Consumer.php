@@ -79,7 +79,7 @@ class Consumer
             // Replication start
             CoordinatorManager::until($this->getIdentifier())->resume();
 
-            $this->debug('Process started.');
+            $this->debug('Consumer started.');
 
             // Worker exit
             Coroutine::create(function () {
@@ -87,7 +87,7 @@ class Consumer
 
                 $this->stop();
 
-                $this->warning('Process stopped.');
+                $this->warning('Consumer stopped.');
             });
 
             while (1) {

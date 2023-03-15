@@ -28,13 +28,19 @@ class ConsumerManager
         $connections = $this->config->get('trigger.connections', []);
 
         foreach ($connections as $connection => $options) {
+            if (isset($options['enable']) && ! $options['enable']) {
+                continue;
+            }
+
             $consumer = make(Consumer::class, [
                 'connection' => $connection,
                 'options' => (array) $options,
             ]);
+
             $process = $this->createProcess($consumer);
             $process->name = $consumer->getName();
             $process->nums = 1;
+
             ProcessManager::register($process);
         }
     }

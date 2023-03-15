@@ -27,6 +27,9 @@
     "extra": {
         "hyperf": {
             "config": "FriendsOfHyperf\\Trigger\\ConfigProvider"
+        },
+        "branch-alias": {
+            "dev-master": "4.0-dev"
         }
     },
     "suggest": {

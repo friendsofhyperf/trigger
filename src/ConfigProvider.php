@@ -25,6 +25,9 @@ class ConfigProvider
         defined('BASE_PATH') or define('BASE_PATH', '');
 
         return [
+            'aspects' => [
+                Aspect\BinaryDataReaderAspect::class, // Fix MySQLReplication bug
+            ],
             'dependencies' => [
                 ServerMutexInterface::class => RedisServerMutex::class,
                 BinLogCurrentSnapshotInterface::class => RedisBinLogCurrentSnapshot::class,

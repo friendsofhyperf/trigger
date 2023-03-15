@@ -45,6 +45,6 @@ class SubscribersCommand extends HyperfCommand
             ]);
 
         $this->info('Subscribers:');
-        $this->table(['connection', 'Subscriber', 'Priority'], $rows);
+        $this->table(['Connection', 'Subscriber', 'Priority'], $rows);
     }
 }

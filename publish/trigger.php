@@ -9,8 +9,10 @@ declare(strict_types=1);
  * @contact  huangdijia@gmail.com
  */
 return [
-    'pools' => [
+    'connections' => [
         'default' => [
+            'enable' => env('TRIGGER_ENABLE', true),
+
             'host' => env('TRIGGER_HOST', ''),
             'port' => (int) env('TRIGGER_PORT', 3306),
             'user' => env('TRIGGER_USER', ''),
@@ -40,6 +42,8 @@ return [
             'concurrent' => [
                 'limit' => 1000,
             ],
+
+            'consume_timeout' => 600,
         ],
     ],
 ];

@@ -29,7 +29,7 @@ use FriendsOfHyperf\Trigger\Annotation\Trigger;
 use FriendsOfHyperf\Trigger\Trigger\AbstractTrigger;
 use MySQLReplication\Event\DTO\EventDTO;
 
-#[Trigger(table:"table", on:"*", pool:"default")]
+#[Trigger(table:"table", on:"*", connection:"default")]
 class FooTrigger extends AbstractTrigger
 {
     public function onWrite(array $new)
@@ -58,7 +58,7 @@ use FriendsOfHyperf\Trigger\Annotation\Subscriber;
 use FriendsOfHyperf\Trigger\Subscriber\AbstractEventSubscriber;
 use MySQLReplication\Event\DTO\EventDTO;
 
-#[Subscriber(pool:"default")]
+#[Subscriber(connection:"default")]
 class BarSubscriber extends AbstractEventSubscriber
 {
     protected function allEvents(EventDTO $event): void

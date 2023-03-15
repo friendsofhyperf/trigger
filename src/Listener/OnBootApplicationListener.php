@@ -10,7 +10,7 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Listener;
 
-use FriendsOfHyperf\Trigger\ReplicationManager;
+use FriendsOfHyperf\Trigger\ConsumerManager;
 use FriendsOfHyperf\Trigger\SubscriberManager;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Event\Contract\ListenerInterface;
@@ -21,7 +21,7 @@ class OnBootApplicationListener implements ListenerInterface
     public function __construct(
         protected SubscriberManager $subscriberManager,
         protected TriggerManager $triggerManager,
-        protected ReplicationManager $replicationManager
+        protected ConsumerManager $consumerManager
     ) {
     }
 
@@ -39,6 +39,6 @@ class OnBootApplicationListener implements ListenerInterface
     {
         $this->subscriberManager->register();
         $this->triggerManager->register();
-        $this->replicationManager->run();
+        $this->consumerManager->run();
     }
 }

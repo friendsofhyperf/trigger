@@ -10,8 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Monitor;
 
+use FriendsOfHyperf\Trigger\Consumer;
 use FriendsOfHyperf\Trigger\Event\OnReplicationStop;
-use FriendsOfHyperf\Trigger\Replication;
 use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\StdoutLoggerInterface;
@@ -32,28 +32,30 @@ class HealthMonitor
 
     protected int $snapShortInterval = 10;
 
-    protected string $pool;
+    protected string $connection;
 
     protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
     protected Timer $timer;
 
-    protected StdoutLoggerInterface $logger;
+    protected ?StdoutLoggerInterface $logger = null;
 
-    public function __construct(protected ContainerInterface $container, protected Replication $replication)
+    public function __construct(protected ContainerInterface $container, protected Consumer $consumer)
     {
-        $this->pool = $replication->getPool();
-        $this->monitorInterval = (int) $replication->getOption('health_monitor.interval', 10);
-        $this->snapShortInterval = (int) $replication->getOption('snapshot.interval', 10);
-        $this->binLogCurrentSnapshot = $replication->getBinLogCurrentSnapshot();
-        $this->logger = $this->container->get(StdoutLoggerInterface::class);
+        $this->connection = $consumer->getConnection();
+        $this->monitorInterval = (int) $consumer->getOption('health_monitor.interval', 10);
+        $this->snapShortInterval = (int) $consumer->getOption('snapshot.interval', 10);
+        $this->binLogCurrentSnapshot = $consumer->getBinLogCurrentSnapshot();
+        if ($container->has(StdoutLoggerInterface::class)) {
+            $this->logger = $container->get(StdoutLoggerInterface::class);
+        }
         $this->timer = new Timer($this->logger);
     }
 
     public function process(): void
     {
         Coroutine::create(function () {
-            CoordinatorManager::until($this->replication->getIdentifier())->yield();
+            CoordinatorManager::until($this->consumer->getIdentifier())->yield();
 
             // Monitor binLogCurrent
             $this->timer->tick($this->monitorInterval, function () {
@@ -77,7 +79,7 @@ class HealthMonitor
                     $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
                     && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
                 ) {
-                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->pool, $this->binLogCurrent));
+                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->connection, $this->binLogCurrent));
                 }
 
                 $this->binLogCurrentSnapshot->set($this->binLogCurrent);

@@ -30,8 +30,8 @@ class TriggerSubscriber extends AbstractSubscriber
     public function __construct(
         protected ContainerInterface $container,
         protected TriggerManager $triggerManager,
-        protected StdoutLoggerInterface $logger,
-        protected Consumer $consumer
+        protected Consumer $consumer,
+        protected ?StdoutLoggerInterface $logger = null
     ) {
         $this->concurrent = new Concurrent(
             (int) $consumer->getOption('concurrent.limit') ?? 1000
@@ -54,7 +54,7 @@ class TriggerSubscriber extends AbstractSubscriber
         }
 
         $key = join('.', [
-            $this->consumer->getPool(),
+            $this->consumer->getconnection(),
             $event->getTableMap()->getDatabase(),
             $event->getTableMap()->getTable(),
             $event->getType(),
@@ -86,7 +86,7 @@ class TriggerSubscriber extends AbstractSubscriber
                     try {
                         call([$this->container->get($class), $method], $args);
                     } catch (Throwable $e) {
-                        $this->logger->error(sprintf(
+                        $this->error(sprintf(
                             "%s in %s:%s\n%s",
                             $e->getMessage(),
                             $e->getFile(),

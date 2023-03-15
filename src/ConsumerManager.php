@@ -25,11 +25,11 @@ class ConsumerManager
 
     public function run()
     {
-        $pools = $this->config->get('trigger.pools', []);
+        $connections = $this->config->get('trigger.connections', []);
 
-        foreach ($pools as $pool => $options) {
+        foreach ($connections as $connection => $options) {
             $consumer = make(Consumer::class, [
-                'pool' => $pool,
+                'connection' => $connection,
                 'options' => (array) $options,
             ]);
             $process = $this->createProcess($consumer);

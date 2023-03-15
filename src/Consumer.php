@@ -41,9 +41,9 @@ class Consumer
     public function __construct(
         protected subscriberManager $subscriberManager,
         protected TriggerManager $triggerManager,
-        protected StdoutLoggerInterface $logger,
-        protected string $pool = 'default',
-        protected array $options = []
+        protected string $connection = 'default',
+        protected array $options = [],
+        protected ?StdoutLoggerInterface $logger = null
     ) {
         if (isset($options['name'])) {
             $this->name = $options['name'];
@@ -55,9 +55,9 @@ class Consumer
 
         if ($this->getOption('server_mutex.enable', true)) {
             $this->serverMutex = make(ServerMutexInterface::class, [
-                'name' => 'trigger:mutex:' . $this->pool,
+                'name' => 'trigger:mutex:' . $this->connection,
                 'owner' => Util::getInternalIp(),
-                'options' => $this->getOption('server_mutex', []) + ['pool' => $this->pool],
+                'options' => $this->getOption('server_mutex', []) + ['connection' => $this->connection],
             ]);
         }
 
@@ -118,7 +118,7 @@ class Consumer
 
     public function getName(): string
     {
-        return $this->name ?? 'trigger-' . $this->pool;
+        return $this->name ?? 'trigger-' . $this->connection;
     }
 
     public function getOption(?string $key = null, $default = null)
@@ -130,14 +130,14 @@ class Consumer
         return Arr::get($this->options, $key, $default);
     }
 
-    public function getPool(): string
+    public function getconnection(): string
     {
-        return $this->pool;
+        return $this->connection;
     }
 
     public function getIdentifier(): string
     {
-        return sprintf('%s_start', $this->pool);
+        return sprintf('%s_start', $this->connection);
     }
 
     public function stop(): void
@@ -153,18 +153,18 @@ class Consumer
 
     protected function makeReplication(): MySQLReplicationFactory
     {
-        $pool = $this->pool;
+        $connection = $this->connection;
         // Get options
         $config = (array) $this->options;
         // Get databases of replication
         $databasesOnly = array_replace(
             $config['databases_only'] ?? [],
-            $this->triggerManager->getDatabases($pool)
+            $this->triggerManager->getDatabases($connection)
         );
         // Get tables of replication
         $tablesOnly = array_replace(
             $config['tables_only'] ?? [],
-            $this->triggerManager->getTables($pool)
+            $this->triggerManager->getTables($connection)
         );
 
         /** @var ConfigBuilder */
@@ -192,9 +192,9 @@ class Consumer
         return tap(make(MySQLReplicationFactory::class, [
             'config' => $configBuilder->build(),
             'eventDispatcher' => $eventDispatcher,
-        ]), function ($factory) use ($pool) {
+        ]), function ($factory) use ($connection) {
             /** @var MySQLReplicationFactory $factory */
-            $subscribers = $this->subscriberManager->get($pool);
+            $subscribers = $this->subscriberManager->get($connection);
             $subscribers[] = TriggerSubscriber::class;
             $subscribers[] = SnapshotSubscriber::class;
 

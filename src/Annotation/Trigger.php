@@ -20,7 +20,7 @@ class Trigger extends AbstractAnnotation
         public ?string $database = null,
         public ?string $table = null,
         public array $events = ['*'],
-        public string $pool = 'default',
+        public string $connection = 'default',
         public int $priority = 0
     ) {
     }

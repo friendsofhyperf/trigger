@@ -9,7 +9,7 @@ declare(strict_types=1);
  * @contact  huangdijia@gmail.com
  */
 return [
-    'pools' => [
+    'connections' => [
         'default' => [
             'host' => env('TRIGGER_HOST', ''),
             'port' => (int) env('TRIGGER_PORT', 3306),

@@ -32,21 +32,23 @@ class HealthMonitor
 
     protected int $snapShortInterval = 10;
 
-    protected string $pool;
+    protected string $connection;
 
     protected BinLogCurrentSnapshotInterface $binLogCurrentSnapshot;
 
     protected Timer $timer;
 
-    protected StdoutLoggerInterface $logger;
+    protected ?StdoutLoggerInterface $logger = null;
 
     public function __construct(protected ContainerInterface $container, protected Consumer $consumer)
     {
-        $this->pool = $consumer->getPool();
+        $this->connection = $consumer->getconnection();
         $this->monitorInterval = (int) $consumer->getOption('health_monitor.interval', 10);
         $this->snapShortInterval = (int) $consumer->getOption('snapshot.interval', 10);
         $this->binLogCurrentSnapshot = $consumer->getBinLogCurrentSnapshot();
-        $this->logger = $this->container->get(StdoutLoggerInterface::class);
+        if ($container->has(StdoutLoggerInterface::class)) {
+            $this->logger = $container->get(StdoutLoggerInterface::class);
+        }
         $this->timer = new Timer($this->logger);
     }
 
@@ -77,7 +79,7 @@ class HealthMonitor
                     $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
                     && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
                 ) {
-                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->pool, $this->binLogCurrent));
+                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->connection, $this->binLogCurrent));
                 }
 
                 $this->binLogCurrentSnapshot->set($this->binLogCurrent);

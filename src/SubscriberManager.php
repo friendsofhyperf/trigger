@@ -20,7 +20,7 @@ class SubscriberManager
 {
     protected array $subscribers = [];
 
-    public function __construct(protected StdoutLoggerInterface $logger)
+    public function __construct(protected ?StdoutLoggerInterface $logger = null)
     {
     }
 
@@ -36,12 +36,12 @@ class SubscriberManager
 
         foreach ($queue as $value) {
             [$class, $property] = $value;
-            $this->subscribers[$property->pool] ??= [];
-            $this->subscribers[$property->pool][] = $class;
+            $this->subscribers[$property->connection] ??= [];
+            $this->subscribers[$property->connection][] = $class;
 
             $this->logger->debug(sprintf(
                 '[trigger.%s] %s registered by %s process by %s.',
-                $property->pool,
+                $property->connection,
                 $this::class,
                 $class,
                 $this::class
@@ -49,8 +49,8 @@ class SubscriberManager
         }
     }
 
-    public function get(string $pool = 'default'): array
+    public function get(string $connection = 'default'): array
     {
-        return (array) Arr::get($this->subscribers, $pool, []);
+        return (array) Arr::get($this->subscribers, $connection, []);
     }
 }

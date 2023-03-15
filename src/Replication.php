@@ -95,7 +95,7 @@ class Replication
                     break;
                 }
 
-                $replication->consume();
+                wait(fn () => $replication->consume(), (float) $this->getOption('consume_timeout', 600));
             }
         };
 

@@ -40,6 +40,8 @@ return [
             'concurrent' => [
                 'limit' => 1000,
             ],
+
+            'consume_timeout' => 600,
         ],
     ],
 ];

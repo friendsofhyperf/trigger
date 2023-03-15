@@ -33,8 +33,8 @@ class SubscribersCommand extends HyperfCommand
         $subscribers = AnnotationCollector::getClassesByAnnotation(Subscriber::class);
         $rows = collect($subscribers)
             ->filter(function ($property, $class) {
-                if ($this->input->getOption('connection')) {
-                    return $this->input->getOption('connection') == $property->connection;
+                if ($connection = $this->input->getOption('connection')) {
+                    return $connection == $property->connection;
                 }
                 return true;
             })

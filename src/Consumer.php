@@ -189,10 +189,12 @@ class Consumer
 
         $eventDispatcher = make(EventDispatcher::class);
 
-        return tap(make(MySQLReplicationFactory::class, [
-            'config' => $configBuilder->build(),
-            'eventDispatcher' => $eventDispatcher,
-        ]), function ($factory) use ($connection) {
+        return tap(
+            make(MySQLReplicationFactory::class, [
+                'config' => $configBuilder->build(),
+                'eventDispatcher' => $eventDispatcher,
+            ]),
+            function ($factory) use ($connection) {
             /** @var MySQLReplicationFactory $factory */
             $subscribers = $this->subscriberManager->get($connection);
             $subscribers[] = TriggerSubscriber::class;
@@ -201,6 +203,7 @@ class Consumer
             foreach ($subscribers as $subscriber) {
                 $factory->registerSubscriber(make($subscriber, ['consumer' => $this]));
             }
-        });
+        }
+        );
     }
 }

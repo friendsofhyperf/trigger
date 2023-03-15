@@ -10,16 +10,18 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger\Subscriber;
 
-use FriendsOfHyperf\Trigger\Replication;
+use FriendsOfHyperf\Trigger\Consumer;
 use FriendsOfHyperf\Trigger\Traits\Logger;
 use FriendsOfHyperf\Trigger\TriggerManager;
 use Hyperf\Contract\StdoutLoggerInterface;
-use Hyperf\Utils\Coroutine\Concurrent;
+use Hyperf\Coroutine\Concurrent;
 use MySQLReplication\Definitions\ConstEventsNames;
 use MySQLReplication\Event\DTO\EventDTO;
 use MySQLReplication\Event\DTO\RowsDTO;
 use Psr\Container\ContainerInterface;
 use Throwable;
+
+use function Hyperf\Support\call;
 
 class TriggerSubscriber extends AbstractSubscriber
 {
@@ -30,11 +32,11 @@ class TriggerSubscriber extends AbstractSubscriber
     public function __construct(
         protected ContainerInterface $container,
         protected TriggerManager $triggerManager,
-        protected StdoutLoggerInterface $logger,
-        protected Replication $replication
+        protected Consumer $consumer,
+        protected ?StdoutLoggerInterface $logger = null
     ) {
         $this->concurrent = new Concurrent(
-            (int) $replication->getOption('concurrent.limit') ?? 1000
+            (int) $consumer->getOption('concurrent.limit') ?? 1000
         );
     }
 
@@ -54,7 +56,7 @@ class TriggerSubscriber extends AbstractSubscriber
         }
 
         $key = join('.', [
-            $this->replication->getPool(),
+            $this->consumer->getConnection(),
             $event->getTableMap()->getDatabase(),
             $event->getTableMap()->getTable(),
             $event->getType(),
@@ -86,7 +88,7 @@ class TriggerSubscriber extends AbstractSubscriber
                     try {
                         call([$this->container->get($class), $method], $args);
                     } catch (Throwable $e) {
-                        $this->logger->error(sprintf(
+                        $this->error(sprintf(
                             "%s in %s:%s\n%s",
                             $e->getMessage(),
                             $e->getFile(),

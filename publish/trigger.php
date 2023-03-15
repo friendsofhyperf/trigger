@@ -8,9 +8,13 @@ declare(strict_types=1);
  * @document https://github.com/friendsofhyperf/trigger/blob/main/README.md
  * @contact  huangdijia@gmail.com
  */
+use function Hyperf\Support\env;
+
 return [
-    'pools' => [
+    'connections' => [
         'default' => [
+            'enable' => env('TRIGGER_ENABLE', true),
+
             'host' => env('TRIGGER_HOST', ''),
             'port' => (int) env('TRIGGER_PORT', 3306),
             'user' => env('TRIGGER_USER', ''),
@@ -40,6 +44,8 @@ return [
             'concurrent' => [
                 'limit' => 1000,
             ],
+
+            'consume_timeout' => 600,
         ],
     ],
 ];

@@ -33,20 +33,20 @@ class RedisServerMutex implements ServerMutexInterface
 
     protected int $retryInterval = 10;
 
-    protected string $pool = 'default';
+    protected string $connection = 'default';
 
     public function __construct(
-        protected StdoutLoggerInterface $logger,
         protected Redis $redis,
         protected ?string $name = null,
         protected ?string $owner = null,
-        array $options = []
+        array $options = [],
+        protected ?StdoutLoggerInterface $logger = null
     ) {
         $this->expires = (int) $options['expires'] ?? 60;
         $this->keepaliveInterval = (int) $options['keepalive_interval'] ?? 10;
-        $this->name = $name ?? sprintf('trigger:server:%s', $this->pool);
+        $this->name = $name ?? sprintf('trigger:server:%s', $this->connection);
         $this->owner = $owner ?? Util::getInternalIp();
-        $this->pool = $options['pool'];
+        $this->connection = $options['connection'];
         $this->timer = new Timer($logger);
         $this->retryInterval = (int) $options['retry_interval'] ?? 10;
     }
@@ -111,6 +111,6 @@ class RedisServerMutex implements ServerMutexInterface
 
     protected function getIdentifier(): string
     {
-        return sprintf('%s_%s', $this->pool, __CLASS__);
+        return sprintf('%s_%s', $this->connection, __CLASS__);
     }
 }

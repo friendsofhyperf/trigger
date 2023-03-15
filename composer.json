@@ -3,19 +3,26 @@
     "description": "The MySQL Trigger component for Hyperf.",
     "type": "library",
     "require": {
-        "hyperf/command": "~3.0.0",
-        "hyperf/coordinator": "~3.0.0",
-        "hyperf/di": "~3.0.0",
-        "hyperf/event": "~3.0.0",
-        "hyperf/process": "~3.0.0",
-        "hyperf/utils": "~3.0.0",
+        "php": ">=8.1.0",
+        "friendsofhyperf/command-signals": "~3.1.0",
+        "hyperf/collection": "~3.1.0",
+        "hyperf/command": "~3.1.0",
+        "hyperf/conditionable": "~3.1.0",
+        "hyperf/context": "~3.1.0",
+        "hyperf/coordinator": "~3.1.0",
+        "hyperf/coroutine": "~3.1.0",
+        "hyperf/di": "~3.1.0",
+        "hyperf/event": "~3.1.0",
+        "hyperf/process": "~3.1.0",
+        "hyperf/stringable": "~3.1.0",
+        "hyperf/tappable": "~3.1.0",
         "moln/php-mysql-replication": "^1.2"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.0",
-        "hyperf/framework": "~3.0.0",
-        "hyperf/redis": "~3.0.0",
-        "hyperf/signal": "~3.0.0",
+        "hyperf/framework": "~3.1.0",
+        "hyperf/redis": "~3.1.0",
+        "hyperf/signal": "~3.1.0",
         "phpstan/phpstan": "^1.0",
         "swoole/ide-helper": "dev-master"
     },
@@ -27,6 +34,9 @@
     "extra": {
         "hyperf": {
             "config": "FriendsOfHyperf\\Trigger\\ConfigProvider"
+        },
+        "branch-alias": {
+            "dev-main": "3.1-dev"
         }
     },
     "suggest": {

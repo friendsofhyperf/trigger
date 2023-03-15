@@ -15,7 +15,9 @@ use Hyperf\Process\AbstractProcess;
 use Hyperf\Process\ProcessManager;
 use Psr\Container\ContainerInterface;
 
-class ReplicationManager
+use function Hyperf\Support\make;
+
+class ConsumerManager
 {
     public function __construct(
         protected ContainerInterface $container,
@@ -25,30 +27,37 @@ class ReplicationManager
 
     public function run()
     {
-        $pools = $this->config->get('trigger.pools', []);
+        $connections = $this->config->get('trigger.connections', []);
 
-        foreach ($pools as $pool => $options) {
-            $replication = make(Replication::class, [
-                'pool' => $pool,
+        foreach ($connections as $connection => $options) {
+            if (isset($options['enable']) && ! $options['enable']) {
+                continue;
+            }
+
+            $consumer = make(Consumer::class, [
+                'connection' => $connection,
                 'options' => (array) $options,
             ]);
-            $process = $this->createProcess($replication);
-            $process->name = $replication->getName();
+
+            $process = $this->createProcess($consumer);
+            $process->name = $consumer->getName();
             $process->nums = 1;
+
             ProcessManager::register($process);
         }
     }
 
-    protected function createProcess(Replication $replication): AbstractProcess
+    protected function createProcess(Consumer $consumer): AbstractProcess
     {
-        return new class($replication) extends AbstractProcess {
-            public function __construct(protected Replication $replication)
+        return new class($this->container, $consumer) extends AbstractProcess {
+            public function __construct(ContainerInterface $container, protected Consumer $consumer)
             {
+                parent::__construct($container);
             }
 
             public function handle(): void
             {
-                $this->replication->start();
+                $this->consumer->start();
             }
         };
     }

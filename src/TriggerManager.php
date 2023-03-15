@@ -11,10 +11,12 @@ declare(strict_types=1);
 namespace FriendsOfHyperf\Trigger;
 
 use FriendsOfHyperf\Trigger\Annotation\Trigger;
+use Hyperf\Collection\Arr;
 use Hyperf\Contract\ConfigInterface;
 use Hyperf\Di\Annotation\AnnotationCollector;
-use Hyperf\Utils\Arr;
 use SplPriorityQueue;
+
+use function Hyperf\Support\class_basename;
 
 class TriggerManager
 {
@@ -42,11 +44,11 @@ class TriggerManager
 
             /** @var Trigger $property */
             foreach ($property->events as $eventType) {
-                $config = $this->config->get('trigger.pools.' . $property->pool);
+                $config = $this->config->get('trigger.connections.' . $property->connection);
                 $property->table ??= class_basename($class);
                 $property->database ??= $config['databases_only'][0] ?? '';
 
-                $key = $this->buildKey($property->pool, $property->database, $property->table, $eventType);
+                $key = $this->buildKey($property->connection, $property->database, $property->table, $eventType);
                 $method = 'on' . ucfirst($eventType);
 
                 $items = Arr::get($this->triggers, $key, []);
@@ -62,17 +64,17 @@ class TriggerManager
         return Arr::get($this->triggers, $key, []);
     }
 
-    public function getDatabases(string $pool): array
+    public function getDatabases(string $connection): array
     {
-        return array_keys($this->get($pool));
+        return array_keys($this->get($connection));
     }
 
-    public function getTables(string $pool): array
+    public function getTables(string $connection): array
     {
         $tables = [];
 
-        foreach ($this->getDatabases($pool) as $database) {
-            $tables = [...$tables, ...array_keys($this->get($this->buildKey($pool, $database)))];
+        foreach ($this->getDatabases($connection) as $database) {
+            $tables = [...$tables, ...array_keys($this->get($this->buildKey($connection, $database)))];
         }
 
         return $tables;

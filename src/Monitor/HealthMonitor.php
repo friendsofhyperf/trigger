@@ -75,11 +75,15 @@ class HealthMonitor
                     return;
                 }
 
+                $binLogCurrentCache = $this->binLogCurrentSnapshot->get();
+
                 if (
-                    $this->binLogCurrentSnapshot->get() instanceof BinLogCurrent
-                    && $this->binLogCurrentSnapshot->get()->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
+                    $binLogCurrentCache instanceof BinLogCurrent
+                    && $binLogCurrentCache->getBinLogPosition() == $this->binLogCurrent->getBinLogPosition()
                 ) {
-                    $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->connection, $this->binLogCurrent));
+                    if ($this->container->has(EventDispatcherInterface::class)) {
+                        $this->container->get(EventDispatcherInterface::class)?->dispatch(new OnReplicationStop($this->connection, $this->binLogCurrent));
+                    }
                 }
 
                 $this->binLogCurrentSnapshot->set($this->binLogCurrent);

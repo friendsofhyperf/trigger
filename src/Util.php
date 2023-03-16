@@ -10,6 +10,8 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
+use RuntimeException;
+
 class Util
 {
     /**
@@ -29,6 +31,6 @@ class Util
             return $ip;
         }
 
-        throw new \RuntimeException('Can not get the internal IP.');
+        throw new RuntimeException('Can not get the internal IP.');
     }
 }

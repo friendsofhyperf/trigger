@@ -3,11 +3,15 @@
     "description": "The MySQL Trigger component for Hyperf.",
     "type": "library",
     "require": {
+        "friendsofhyperf/command-signals": "^3.0",
+        "hyperf/collection": "~3.0.0",
         "hyperf/command": "~3.0.0",
+        "hyperf/conditionable": "~3.0.0",
         "hyperf/coordinator": "~3.0.0",
         "hyperf/di": "~3.0.0",
         "hyperf/event": "~3.0.0",
         "hyperf/process": "~3.0.0",
+        "hyperf/tappable": "~3.0.0",
         "hyperf/utils": "~3.0.0",
         "moln/php-mysql-replication": "^1.2"
     },

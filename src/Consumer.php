@@ -16,13 +16,15 @@ use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
 use FriendsOfHyperf\Trigger\Subscriber\SnapshotSubscriber;
 use FriendsOfHyperf\Trigger\Subscriber\TriggerSubscriber;
 use FriendsOfHyperf\Trigger\Traits\Logger;
+use Hyperf\Collection\Arr;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Coordinator\Constants;
 use Hyperf\Coordinator\CoordinatorManager;
-use Hyperf\Utils\Arr;
 use Hyperf\Utils\Coroutine;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
+
+use function Hyperf\Tappable\tap;
 
 class Consumer
 {

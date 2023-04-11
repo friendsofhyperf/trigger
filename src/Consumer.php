@@ -24,6 +24,7 @@ use Hyperf\Coroutine\Coroutine;
 use MySQLReplication\Config\ConfigBuilder;
 use MySQLReplication\MySQLReplicationFactory;
 
+use function Hyperf\Coroutine\wait;
 use function Hyperf\Tappable\tap;
 
 class Consumer

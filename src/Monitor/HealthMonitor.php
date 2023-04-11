@@ -17,7 +17,7 @@ use FriendsOfHyperf\Trigger\Traits\Logger;
 use Hyperf\Contract\StdoutLoggerInterface;
 use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Coordinator\Timer;
-use Hyperf\Utils\Coroutine;
+use Hyperf\Coroutine\Coroutine;
 use MySQLReplication\BinLog\BinLogCurrent;
 use Psr\Container\ContainerInterface;
 use Psr\EventDispatcher\EventDispatcherInterface;

@@ -10,14 +10,6 @@ declare(strict_types=1);
  */
 namespace FriendsOfHyperf\Trigger;
 
-use FriendsOfHyperf\Trigger\Command\SubscribersCommand;
-use FriendsOfHyperf\Trigger\Command\TriggersCommand;
-use FriendsOfHyperf\Trigger\Listener\OnBootApplicationListener;
-use FriendsOfHyperf\Trigger\Mutex\RedisServerMutex;
-use FriendsOfHyperf\Trigger\Mutex\ServerMutexInterface;
-use FriendsOfHyperf\Trigger\Snapshot\BinLogCurrentSnapshotInterface;
-use FriendsOfHyperf\Trigger\Snapshot\RedisBinLogCurrentSnapshot;
-
 class ConfigProvider
 {
     public function __invoke(): array
@@ -29,15 +21,16 @@ class ConfigProvider
                 Aspect\BinaryDataReaderAspect::class, // Fix MySQLReplication bug
             ],
             'dependencies' => [
-                ServerMutexInterface::class => RedisServerMutex::class,
-                BinLogCurrentSnapshotInterface::class => RedisBinLogCurrentSnapshot::class,
+                Mutex\ServerMutexInterface::class => Mutex\RedisServerMutex::class,
+                Snapshot\BinLogCurrentSnapshotInterface::class => Snapshot\RedisBinLogCurrentSnapshot::class,
             ],
             'commands' => [
-                SubscribersCommand::class,
-                TriggersCommand::class,
+                Command\ConsumeCommand::class,
+                Command\SubscribersCommand::class,
+                Command\TriggersCommand::class,
             ],
             'listeners' => [
-                OnBootApplicationListener::class,
+                Listener\OnBootApplicationListener::class,
             ],
             'publish' => [
                 [

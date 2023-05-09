@@ -19,6 +19,8 @@ use Hyperf\Coordinator\CoordinatorManager;
 use Hyperf\Coroutine\Coroutine;
 use Psr\Container\ContainerInterface;
 
+use function Hyperf\Support\make;
+
 #[Command()]
 class ConsumeCommand extends HyperfCommand
 {

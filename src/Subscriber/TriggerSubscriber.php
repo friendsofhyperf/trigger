@@ -21,6 +21,8 @@ use MySQLReplication\Event\DTO\RowsDTO;
 use Psr\Container\ContainerInterface;
 use Throwable;
 
+use function Hyperf\Support\call;
+
 class TriggerSubscriber extends AbstractSubscriber
 {
     use Logger;

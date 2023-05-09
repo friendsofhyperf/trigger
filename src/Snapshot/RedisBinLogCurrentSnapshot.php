@@ -14,6 +14,8 @@ use FriendsOfHyperf\Trigger\Consumer;
 use Hyperf\Redis\Redis;
 use MySQLReplication\BinLog\BinLogCurrent;
 
+use function Hyperf\Support\with;
+
 class RedisBinLogCurrentSnapshot implements BinLogCurrentSnapshotInterface
 {
     public function __construct(

@@ -17,6 +17,8 @@ use Hyperf\Command\Command as HyperfCommand;
 use Hyperf\Di\Annotation\AnnotationCollector;
 use Psr\Container\ContainerInterface;
 
+use function Hyperf\Collection\collect;
+
 class SubscribersCommand extends HyperfCommand
 {
     protected ?string $signature = 'describe:subscribers {--C|connection= : connection}';

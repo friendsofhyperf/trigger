@@ -1,28 +1,22 @@
 # Trigger
 
-[中文说明](README_CN.md)
+[English](README.md)
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/friendsofhyperf/trigger)](https://packagist.org/packages/friendsofhyperf/trigger)
-[![Total Downloads](https://img.shields.io/packagist/dt/friendsofhyperf/trigger)](https://packagist.org/packages/friendsofhyperf/trigger)
-[![License](https://img.shields.io/packagist/l/friendsofhyperf/trigger)](https://github.com/friendsofhyperf/trigger)
+## 安装
 
-MySQL trigger component for Hyperf, Based on a great work of creators：[krowinski/php-mysql-replication](https://github.com/krowinski/php-mysql-replication)
-
-## Installation
-
-- Request
+- 安装
 
 ```shell
 composer require friendsofhyperf/trigger
 ```
 
-- Publish
+- 发布配置
 
 ```shell
 php bin/hyperf.php vendor:publish friendsofhyperf/trigger
 ```
 
-## Add listener
+## 添加监听器
 
 ```php
 // config/autoload/listeners.php
@@ -32,7 +26,7 @@ return [
 ];
 ```
 
-## Define a trigger
+## 定义触发器
 
 ```php
 namespace App\Trigger;
@@ -61,7 +55,7 @@ class FooTrigger extends AbstractTrigger
 }
 ```
 
-## Define a subscriber
+## 定义订阅者
 
 ```php
 namespace App\Subscriber;
@@ -75,16 +69,7 @@ class BarSubscriber extends AbstractSubscriber
 {
     protected function allEvents(EventDTO $event): void
     {
-        // some code
+        // 一些代码
     }
 }
 ```
-
-## Contact
-
-- [Twitter](https://twitter.com/huangdijia)
-- [Gmail](mailto:huangdijia@gmail.com)
-
-## License
-
-[MIT](LICENSE)
